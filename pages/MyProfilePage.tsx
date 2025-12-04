@@ -3,10 +3,10 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { Cog6ToothIcon, StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon } from '../components/Icon';
+import { Cog6ToothIcon, StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, PlusIcon, TrashIcon } from '../components/Icon';
 
 const MyProfilePage: React.FC = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, updateUser } = useAuth();
   const navigate = useNavigate();
 
   if (!currentUser) {
@@ -16,6 +16,23 @@ const MyProfilePage: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const imageUrl = URL.createObjectURL(file);
+      const currentGallery = currentUser.gallery || [];
+      updateUser({ gallery: [...currentGallery, imageUrl] });
+    }
+  };
+
+  const handleDeletePhoto = (index: number) => {
+    if (window.confirm('آیا از حذف این عکس مطمئن هستید؟')) {
+        const currentGallery = currentUser.gallery || [];
+        const newGallery = currentGallery.filter((_, i) => i !== index);
+        updateUser({ gallery: newGallery });
+    }
   };
 
   const menuItems = [
@@ -28,7 +45,7 @@ const MyProfilePage: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header title="پروفایل من" />
-      <div className="flex-grow overflow-y-auto">
+      <div className="flex-grow overflow-y-auto pb-4">
           <div className="p-6 text-center">
             <img src={currentUser.photo} alt={currentUser.name} className="w-28 h-28 rounded-full object-cover mx-auto ring-4 ring-pink-500" />
             <h2 className="mt-4 text-2xl font-bold">{currentUser.name}، {currentUser.age}</h2>
@@ -40,6 +57,27 @@ const MyProfilePage: React.FC = () => {
             </div>
           </div>
           
+          <div className="px-4 py-2 mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">گالری تصاویر من</h3>
+            <div className="grid grid-cols-3 gap-2">
+                {currentUser.gallery?.map((photo, index) => (
+                    <div key={index} className="relative group aspect-square">
+                        <img src={photo} alt={`User photo ${index}`} className="w-full h-full object-cover rounded-lg" />
+                        <button 
+                            onClick={() => handleDeletePhoto(index)}
+                            className="absolute top-1 left-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                        >
+                            <TrashIcon className="h-4 w-4" />
+                        </button>
+                    </div>
+                ))}
+                <label className="flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <PlusIcon className="w-8 h-8 text-gray-400" />
+                    <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                </label>
+            </div>
+          </div>
+
           <div className="px-4">
             <Link to="/store" className="block w-full text-right p-4 mb-4 rounded-lg bg-gradient-to-l from-pink-500 to-orange-400 text-white shadow-lg">
               <div className="flex items-center justify-between">

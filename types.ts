@@ -31,6 +31,7 @@ export interface User {
   partnerPreferences: string;
   isOnline: boolean;
   distance: number; // in km
+  gallery?: string[]; // List of photo URLs
 }
 
 export interface Message {

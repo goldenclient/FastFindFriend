@@ -54,6 +54,19 @@ const UserProfilePage: React.FC = () => {
             <p>{user.bio}</p>
           </ProfileSection>
 
+          {user.gallery && user.gallery.length > 0 && (
+            <div>
+                <h3 className="text-lg font-semibold text-pink-500 border-b-2 border-pink-200 dark:border-pink-800 pb-2 mb-3">گالری تصاویر</h3>
+                <div className="grid grid-cols-3 gap-2">
+                    {user.gallery.map((photo, index) => (
+                        <div key={index} className="aspect-square">
+                            <img src={photo} alt={`Gallery ${index}`} className="w-full h-full object-cover rounded-lg shadow-sm" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+          )}
+
           <ProfileSection title="جزئیات">
             <div className="grid grid-cols-2 gap-4">
               <DetailItem label="وضعیت تاهل" value={user.maritalStatus} />

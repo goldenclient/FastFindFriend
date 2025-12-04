@@ -17,7 +17,12 @@ export const MOCK_USERS: User[] = [
     favoriteSport: 'یوگا',
     partnerPreferences: 'کسی که مهربون و باانگیزه باشه و حیوانات رو دوست داشته باشه. از مکالمات عمیق و ماجراجویی‌های یهویی لذت ببره.',
     isOnline: true,
-    distance: 5
+    distance: 5,
+    gallery: [
+      'https://picsum.photos/id/1027/400/400',
+      'https://picsum.photos/id/1015/400/400',
+      'https://picsum.photos/id/1016/400/400'
+    ]
   },
   {
     id: '2',
@@ -34,7 +39,12 @@ export const MOCK_USERS: User[] = [
     favoriteSport: 'فوتبال',
     partnerPreferences: 'دنبال یه شریک باهوش و ماجراجو برای به اشتراک گذاشتن لحظات زندگی هستم. اگه بتونی تو شطرنج شکستم بدی امتیاز مثبت داری.',
     isOnline: false,
-    distance: 12
+    distance: 12,
+    gallery: [
+      'https://picsum.photos/id/1005/400/400',
+      'https://picsum.photos/id/1018/400/400',
+      'https://picsum.photos/id/1019/400/400'
+    ]
   },
   {
     id: '3',
@@ -123,5 +133,10 @@ export const MOCK_LOGGED_IN_USER: User = {
     favoriteSport: 'دوچرخه‌سواری',
     partnerPreferences: 'کسی با حس طنز خاص که عاشق سرگرمی‌هاش باشه و سگ‌ها رو دوست داشته باشه.',
     isOnline: true,
-    distance: 0
+    distance: 0,
+    gallery: [
+      'https://picsum.photos/id/237/400/400',
+      'https://picsum.photos/id/1069/400/400',
+      'https://picsum.photos/id/1074/400/400'
+    ]
 };
