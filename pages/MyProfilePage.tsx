@@ -1,21 +1,34 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { Cog6ToothIcon, StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, PlusIcon, TrashIcon } from '../components/Icon';
+import { Cog6ToothIcon, StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, PlusIcon, TrashIcon, CameraIcon, EyeSlashIcon } from '../components/Icon';
+import PremiumModal from '../components/PremiumModal';
+import ImageLightbox from '../components/ImageLightbox';
 
 const MyProfilePage: React.FC = () => {
   const { currentUser, logout, updateUser } = useAuth();
   const navigate = useNavigate();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumMessage, setPremiumMessage] = useState('');
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   if (!currentUser) {
-    return null; // Or a loading indicator
+    return null;
   }
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleProfilePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const imageUrl = URL.createObjectURL(file);
+          updateUser({ photo: imageUrl });
+      }
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,6 +48,23 @@ const MyProfilePage: React.FC = () => {
     }
   };
 
+  const handleGhostModeToggle = () => {
+      if (!currentUser.isPremium) {
+          setPremiumMessage('برای فعال‌سازی حالت روح، باید پنل خود را ارتقا دهید.');
+          setShowPremiumModal(true);
+      } else {
+          updateUser({ isGhostMode: !currentUser.isGhostMode });
+      }
+  };
+
+  const handleRestrictedLink = (e: React.MouseEvent, path: string, label: string) => {
+      if (!currentUser.isPremium && path === '/visitors') {
+          e.preventDefault();
+          setPremiumMessage(`برای مشاهده بخش "${label}" باید پنل خود را ارتقا دهید.`);
+          setShowPremiumModal(true);
+      }
+  };
+
   const menuItems = [
     { label: 'بازدیدکنندگان (Visitors)', to: '/visitors', icon: UserCircleIcon },
     { label: 'لایک‌ها (Likes)', to: '/likes', icon: HeartIcon },
@@ -44,11 +74,35 @@ const MyProfilePage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-      <Header title="پروفایل من" />
+      <Header 
+        title="پروفایل من" 
+        action={
+            <button 
+                onClick={handleGhostModeToggle} 
+                className={`p-2 rounded-full transition-colors ${currentUser.isGhostMode ? 'bg-gray-800 text-white' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
+                title="حالت روح"
+            >
+                <EyeSlashIcon className="h-6 w-6" />
+            </button>
+        }
+      />
       <div className="flex-grow overflow-y-auto pb-4">
           <div className="p-6 text-center">
-            <img src={currentUser.photo} alt={currentUser.name} className="w-28 h-28 rounded-full object-cover mx-auto ring-4 ring-pink-500" />
+            <div className="relative inline-block">
+                <img 
+                    src={currentUser.photo} 
+                    alt={currentUser.name} 
+                    className="w-28 h-28 rounded-full object-cover mx-auto ring-4 ring-pink-500 cursor-pointer" 
+                    onClick={() => setLightboxImage(currentUser.photo)}
+                />
+                <label className="absolute bottom-0 right-0 bg-pink-500 text-white p-2 rounded-full cursor-pointer hover:bg-pink-600 transition-colors shadow-lg">
+                    <CameraIcon className="h-5 w-5" />
+                    <input type="file" className="hidden" accept="image/*" onChange={handleProfilePhotoUpload} />
+                </label>
+            </div>
+            
             <h2 className="mt-4 text-2xl font-bold">{currentUser.name}، {currentUser.age}</h2>
+            {currentUser.isPremium && <span className="inline-block bg-yellow-400 text-yellow-900 text-xs px-2 py-0.5 rounded-full font-bold mb-1">کاربر ویژه</span>}
             <p className="text-gray-500">{currentUser.occupation}</p>
             <div className="mt-4 flex justify-center space-x-4">
                 <Link to="/edit-profile" className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-lg flex items-center justify-center">
@@ -61,10 +115,10 @@ const MyProfilePage: React.FC = () => {
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">گالری تصاویر من</h3>
             <div className="grid grid-cols-3 gap-2">
                 {currentUser.gallery?.map((photo, index) => (
-                    <div key={index} className="relative group aspect-square">
+                    <div key={index} className="relative group aspect-square cursor-pointer" onClick={() => setLightboxImage(photo)}>
                         <img src={photo} alt={`User photo ${index}`} className="w-full h-full object-cover rounded-lg" />
                         <button 
-                            onClick={() => handleDeletePhoto(index)}
+                            onClick={(e) => { e.stopPropagation(); handleDeletePhoto(index); }}
                             className="absolute top-1 left-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                         >
                             <TrashIcon className="h-4 w-4" />
@@ -94,7 +148,12 @@ const MyProfilePage: React.FC = () => {
             {menuItems.map(item => {
                 const Icon = item.icon;
                 return (
-                    <Link key={item.to} to={item.to} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <Link 
+                        key={item.to} 
+                        to={item.to} 
+                        onClick={(e) => handleRestrictedLink(e, item.to, item.label)}
+                        className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
                         <div className="flex items-center">
                             <Icon className="h-6 w-6 text-pink-500 ml-4" />
                             <span>{item.label}</span>
@@ -111,6 +170,13 @@ const MyProfilePage: React.FC = () => {
             </button>
           </div>
       </div>
+
+      {showPremiumModal && (
+          <PremiumModal onClose={() => setShowPremiumModal(false)} message={premiumMessage} />
+      )}
+      {lightboxImage && (
+          <ImageLightbox imageUrl={lightboxImage} onClose={() => setLightboxImage(null)} />
+      )}
     </div>
   );
 };

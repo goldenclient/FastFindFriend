@@ -6,14 +6,18 @@ import { MOCK_MESSAGES } from '../data/messages';
 import { MOCK_USERS, CURRENT_USER_ID } from '../data/users';
 import Header from '../components/Header';
 import { PaperAirplaneIcon, PhotoIcon } from '../components/Icon';
+import { useAuth } from '../context/AuthContext';
+import PremiumModal from '../components/PremiumModal';
 
 const ChatPage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
     const foundUser = MOCK_USERS.find(u => u.id === userId);
@@ -30,8 +34,17 @@ const ChatPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const checkPremium = () => {
+      if (currentUser && !currentUser.isPremium) {
+          setShowPremiumModal(true);
+          return false;
+      }
+      return true;
+  };
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!checkPremium()) return;
     if (newMessage.trim() === '') return;
 
     const message: MessageType = {
@@ -47,6 +60,8 @@ const ChatPage: React.FC = () => {
   };
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!checkPremium()) return;
+
     if (e.target.files && e.target.files[0]) {
         const imageUrl = URL.createObjectURL(e.target.files[0]);
         const message: MessageType = {
@@ -92,6 +107,9 @@ const ChatPage: React.FC = () => {
           </button>
         </form>
       </div>
+      {showPremiumModal && (
+          <PremiumModal onClose={() => setShowPremiumModal(false)} message="برای ارسال پیام، باید پنل خود را ارتقا دهید." />
+      )}
     </div>
   );
 };

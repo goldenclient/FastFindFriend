@@ -4,12 +4,17 @@ import { Link } from 'react-router-dom';
 import { User } from '../types';
 import { MOCK_USERS } from '../data/users';
 import FilterModal from '../components/FilterModal';
-import { FunnelIcon } from '../components/Icon';
+import { FunnelIcon, EyeSlashIcon } from '../components/Icon';
 import Header from '../components/Header';
+import { useAuth } from '../context/AuthContext';
+import PremiumModal from '../components/PremiumModal';
 
 const HomePage: React.FC = () => {
+  const { currentUser, updateUser } = useAuth();
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumMessage, setPremiumMessage] = useState('');
   
   const handleApplyFilters = (filters: any) => {
     const { ageRange, gender, location, occupation, onlineNow, hasPhoto, distance } = filters;
@@ -43,14 +48,32 @@ const HomePage: React.FC = () => {
     setIsFilterOpen(false);
   };
 
+  const handleGhostModeToggle = () => {
+      if (currentUser && !currentUser.isPremium) {
+          setPremiumMessage('برای فعال‌سازی حالت روح، باید پنل خود را ارتقا دهید.');
+          setShowPremiumModal(true);
+      } else if (currentUser) {
+          updateUser({ isGhostMode: !currentUser.isGhostMode });
+      }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       <Header 
         title="کاوش" 
         action={
-            <button onClick={() => setIsFilterOpen(true)} className="text-gray-600 dark:text-gray-300 hover:text-pink-500 dark:hover:text-pink-400">
-                <FunnelIcon className="h-6 w-6" />
-            </button>
+            <div className="flex space-x-2 space-x-reverse">
+                <button 
+                    onClick={handleGhostModeToggle} 
+                    className={`p-1 rounded-full transition-colors ${currentUser?.isGhostMode ? 'bg-gray-800 text-white' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
+                    title="حالت روح"
+                >
+                    <EyeSlashIcon className="h-6 w-6" />
+                </button>
+                <button onClick={() => setIsFilterOpen(true)} className="text-gray-600 dark:text-gray-300 hover:text-pink-500 dark:hover:text-pink-400">
+                    <FunnelIcon className="h-6 w-6" />
+                </button>
+            </div>
         }
       />
       <div className="flex-grow p-2 grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto">
@@ -69,6 +92,9 @@ const HomePage: React.FC = () => {
           onClose={() => setIsFilterOpen(false)} 
           onApply={handleApplyFilters} 
         />
+      )}
+      {showPremiumModal && (
+          <PremiumModal onClose={() => setShowPremiumModal(false)} message={premiumMessage} />
       )}
     </div>
   );

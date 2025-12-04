@@ -4,14 +4,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { User } from '../types';
 import { MOCK_USERS } from '../data/users';
 import Header from '../components/Header';
-import { HeartIcon, BookmarkIcon, FlagIcon, ChatBubbleOvalLeftEllipsisIcon } from '../components/Icon';
+import { HeartIcon, BookmarkIcon, FlagIcon, ChatBubbleOvalLeftEllipsisIcon, LockClosedIcon } from '../components/Icon';
+import { useAuth } from '../context/AuthContext';
+import PremiumModal from '../components/PremiumModal';
+import ImageLightbox from '../components/ImageLightbox';
 
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumMessage, setPremiumMessage] = useState('');
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     const foundUser = MOCK_USERS.find(u => u.id === userId);
@@ -32,6 +39,15 @@ const UserProfilePage: React.FC = () => {
       navigate(`/chat/${userId}`);
   };
 
+  const handleGalleryClick = (photoUrl: string) => {
+      if (currentUser && currentUser.isPremium) {
+          setLightboxImage(photoUrl);
+      } else {
+          setPremiumMessage('برای مشاهده گالری تصاویر، باید پنل خود را ارتقا دهید.');
+          setShowPremiumModal(true);
+      }
+  };
+
   if (!user) {
     return <div>در حال بارگذاری...</div>;
   }
@@ -41,9 +57,14 @@ const UserProfilePage: React.FC = () => {
       <Header title={user.name} showBackButton />
       <div className="flex-grow overflow-y-auto">
         <div className="relative">
-          <img src={user.photo} alt={user.name} className="w-full h-80 object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-          <div className="absolute bottom-0 right-0 p-6 text-right w-full">
+          <img 
+            src={user.photo} 
+            alt={user.name} 
+            className="w-full h-80 object-cover cursor-pointer" 
+            onClick={() => handleGalleryClick(user.photo)}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
+          <div className="absolute bottom-0 right-0 p-6 text-right w-full pointer-events-none">
             <h1 className="text-3xl font-bold text-white">{user.name}، {user.age}</h1>
             <p className="text-gray-200">{user.occupation} • {user.location}</p>
           </div>
@@ -57,10 +78,19 @@ const UserProfilePage: React.FC = () => {
           {user.gallery && user.gallery.length > 0 && (
             <div>
                 <h3 className="text-lg font-semibold text-pink-500 border-b-2 border-pink-200 dark:border-pink-800 pb-2 mb-3">گالری تصاویر</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 relative">
                     {user.gallery.map((photo, index) => (
-                        <div key={index} className="aspect-square">
-                            <img src={photo} alt={`Gallery ${index}`} className="w-full h-full object-cover rounded-lg shadow-sm" />
+                        <div key={index} className="aspect-square relative cursor-pointer overflow-hidden rounded-lg" onClick={() => handleGalleryClick(photo)}>
+                            <img 
+                                src={photo} 
+                                alt={`Gallery ${index}`} 
+                                className={`w-full h-full object-cover shadow-sm transition-all ${!currentUser?.isPremium ? 'filter blur-sm scale-110' : ''}`} 
+                            />
+                            {!currentUser?.isPremium && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                    <LockClosedIcon className="h-6 w-6 text-white" />
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -90,6 +120,13 @@ const UserProfilePage: React.FC = () => {
         </button>
         <ActionButton icon={HeartIcon} onClick={() => setIsLiked(!isLiked)} active={isLiked} label="لایک" />
       </div>
+      
+      {showPremiumModal && (
+          <PremiumModal onClose={() => setShowPremiumModal(false)} message={premiumMessage} />
+      )}
+      {lightboxImage && (
+          <ImageLightbox imageUrl={lightboxImage} onClose={() => setLightboxImage(null)} />
+      )}
     </div>
   );
 };

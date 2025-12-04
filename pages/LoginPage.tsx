@@ -12,10 +12,21 @@ const LoginPage: React.FC = () => {
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        // Mock login logic
+        
         if (mobile && password) {
-            alert('ورود با موفقیت انجام شد!');
-            login(MOCK_LOGGED_IN_USER);
+            let userToLogin = { ...MOCK_LOGGED_IN_USER };
+            
+            // Check for special test user
+            if (mobile === '09123456789') {
+                userToLogin.isPremium = true;
+                userToLogin.isGhostMode = false;
+                alert('شما به عنوان کاربر ویژه وارد شدید!');
+            } else {
+                userToLogin.isPremium = false;
+                userToLogin.isGhostMode = false;
+            }
+
+            login(userToLogin);
             navigate('/');
         } else {
             alert('لطفاً شماره موبایل و رمز عبور را وارد کنید.');

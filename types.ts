@@ -32,6 +32,8 @@ export interface User {
   isOnline: boolean;
   distance: number; // in km
   gallery?: string[]; // List of photo URLs
+  isPremium?: boolean;
+  isGhostMode?: boolean;
 }
 
 export interface Message {
