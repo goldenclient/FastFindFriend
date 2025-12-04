@@ -15,7 +15,9 @@ export const MOCK_USERS: User[] = [
     height: 165,
     weight: 58,
     favoriteSport: 'یوگا',
-    partnerPreferences: 'کسی که مهربون و باانگیزه باشه و حیوانات رو دوست داشته باشه. از مکالمات عمیق و ماجراجویی‌های یهویی لذت ببره.'
+    partnerPreferences: 'کسی که مهربون و باانگیزه باشه و حیوانات رو دوست داشته باشه. از مکالمات عمیق و ماجراجویی‌های یهویی لذت ببره.',
+    isOnline: true,
+    distance: 5
   },
   {
     id: '2',
@@ -30,7 +32,9 @@ export const MOCK_USERS: User[] = [
     height: 180,
     weight: 75,
     favoriteSport: 'فوتبال',
-    partnerPreferences: 'دنبال یه شریک باهوش و ماجراجو برای به اشتراک گذاشتن لحظات زندگی هستم. اگه بتونی تو شطرنج شکستم بدی امتیاز مثبت داری.'
+    partnerPreferences: 'دنبال یه شریک باهوش و ماجراجو برای به اشتراک گذاشتن لحظات زندگی هستم. اگه بتونی تو شطرنج شکستم بدی امتیاز مثبت داری.',
+    isOnline: false,
+    distance: 12
   },
   {
     id: '3',
@@ -45,7 +49,9 @@ export const MOCK_USERS: User[] = [
     height: 170,
     weight: 62,
     favoriteSport: 'شنا',
-    partnerPreferences: 'دنبال یه فرد متفکر و کنجکاو هستم که هنر و فرهنگ رو درک کنه.'
+    partnerPreferences: 'دنبال یه فرد متفکر و کنجکاو هستم که هنر و فرهنگ رو درک کنه.',
+    isOnline: true,
+    distance: 3
   },
     {
     id: '4',
@@ -60,7 +66,9 @@ export const MOCK_USERS: User[] = [
     height: 178,
     weight: 80,
     favoriteSport: 'صخره‌نوردی',
-    partnerPreferences: 'دنبال ارتباط واقعی با کسی هستم که دلسوز و فعال باشه.'
+    partnerPreferences: 'دنبال ارتباط واقعی با کسی هستم که دلسوز و فعال باشه.',
+    isOnline: false,
+    distance: 25
   },
   {
     id: '5',
@@ -75,7 +83,9 @@ export const MOCK_USERS: User[] = [
     height: 168,
     weight: 55,
     favoriteSport: 'رقص',
-    partnerPreferences: 'صداقت، خلاقیت و سلیقه موسیقی خوب برام مهمه. بیایم یه گروه موسیقی مورد علاقه جدید پیدا کنیم.'
+    partnerPreferences: 'صداقت، خلاقیت و سلیقه موسیقی خوب برام مهمه. بیایم یه گروه موسیقی مورد علاقه جدید پیدا کنیم.',
+    isOnline: true,
+    distance: 8
   },
   {
     id: '6',
@@ -90,7 +100,9 @@ export const MOCK_USERS: User[] = [
     height: 185,
     weight: 88,
     favoriteSport: 'بسکتبال',
-    partnerPreferences: 'یه فرد خونگرم که عاشق خندیدن باشه و از امتحان کردن چیزای جدید نترسه (مخصوصاً غذا!).'
+    partnerPreferences: 'یه فرد خونگرم که عاشق خندیدن باشه و از امتحان کردن چیزای جدید نترسه (مخصوصاً غذا!).',
+    isOnline: false,
+    distance: 45
   }
 ];
 
@@ -109,5 +121,7 @@ export const MOCK_LOGGED_IN_USER: User = {
     height: 175,
     weight: 70,
     favoriteSport: 'دوچرخه‌سواری',
-    partnerPreferences: 'کسی با حس طنز خاص که عاشق سرگرمی‌هاش باشه و سگ‌ها رو دوست داشته باشه.'
+    partnerPreferences: 'کسی با حس طنز خاص که عاشق سرگرمی‌هاش باشه و سگ‌ها رو دوست داشته باشه.',
+    isOnline: true,
+    distance: 0
 };

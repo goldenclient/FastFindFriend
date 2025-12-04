@@ -29,6 +29,8 @@ export interface User {
   weight: number; // in kg
   favoriteSport: string;
   partnerPreferences: string;
+  isOnline: boolean;
+  distance: number; // in km
 }
 
 export interface Message {
