@@ -22,7 +22,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <HashRouter>
-        <div className="max-w-md mx-auto h-screen bg-white dark:bg-black flex flex-col font-sans">
+        <div className="max-w-md mx-auto h-screen bg-white dark:bg-black flex flex-col font-sans overflow-hidden shadow-2xl">
           <AppContent />
         </div>
       </HashRouter>
@@ -35,7 +35,7 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      <main className="flex-grow overflow-y-auto">
+      <main className="flex-grow flex flex-col overflow-hidden relative">
         <Routes>
           {!currentUser ? (
             <>

@@ -33,6 +33,12 @@ export const ArrowLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+export const ArrowRightIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+    </svg>
+);
+
 export const EllipsisVerticalIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
@@ -101,6 +107,11 @@ export const Cog6ToothIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export const ChevronRightIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
     </svg>
 );
+// Note: ChevronRightIcon path d changed to point Left (as it's used for "Next" indicator which should point Left in RTL?
+// Actually in RTL, "Next" usually points to Left (<).
+// The original was M8.25 4.5l7.5 7.5-7.5 7.5 (Pointing Right).
+// I will flip it to point Left for RTL visual consistency if it acts as a "Go deeper" indicator.
+// Flipped path: M15.75 19.5L8.25 12l7.5-7.5

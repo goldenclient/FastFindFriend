@@ -62,7 +62,7 @@ const ChatPage: React.FC = () => {
   };
 
   if (!user) {
-    return <div>Loading...</div>; // Or a proper loading spinner
+    return <div>در حال بارگذاری...</div>; // Or a proper loading spinner
   }
 
   return (
@@ -74,8 +74,8 @@ const ChatPage: React.FC = () => {
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <div className="p-4 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800">
-        <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+      <div className="flex-none p-4 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800">
+        <form onSubmit={handleSendMessage} className="flex items-center space-x-2 space-x-reverse">
           <label htmlFor="image-upload" className="cursor-pointer text-gray-500 hover:text-pink-500">
             <PhotoIcon className="h-6 w-6" />
           </label>
@@ -84,11 +84,11 @@ const ChatPage: React.FC = () => {
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
+            placeholder="پیامی بنویسید..."
             className="flex-grow px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-500"
           />
-          <button type="submit" className="p-2 rounded-full bg-pink-500 text-white hover:bg-pink-600 disabled:bg-gray-400">
-            <PaperAirplaneIcon className="h-6 w-6" />
+          <button type="submit" className="p-2 rounded-full bg-pink-500 text-white hover:bg-pink-600 disabled:bg-gray-400 rotate-180">
+            <PaperAirplaneIcon className="h-6 w-6 transform rotate-180" />
           </button>
         </form>
       </div>
@@ -99,14 +99,14 @@ const ChatPage: React.FC = () => {
 const MessageBubble: React.FC<{ message: MessageType }> = ({ message }) => {
   const isSentByCurrentUser = message.senderId === CURRENT_USER_ID;
   return (
-    <div className={`flex ${isSentByCurrentUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${isSentByCurrentUser ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-xs lg:max-w-md p-1 rounded-lg ${isSentByCurrentUser ? 'bg-pink-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}>
         {message.imageUrl ? (
             <img src={message.imageUrl} alt="uploaded content" className="rounded-md max-h-60" />
         ) : (
             <p className="px-2 py-1">{message.text}</p>
         )}
-        <span className={`text-xs block text-right px-2 py-1 ${isSentByCurrentUser ? 'text-pink-100' : 'text-gray-400'}`}>
+        <span className={`text-xs block text-left px-2 py-1 ${isSentByCurrentUser ? 'text-pink-100' : 'text-gray-400'}`}>
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>

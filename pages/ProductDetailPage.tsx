@@ -21,12 +21,12 @@ const ProductDetailPage: React.FC = () => {
 
     const handlePayment = () => {
         // Mock payment logic
-        alert(`Thank you for purchasing ${product?.name}! Your account has been upgraded.`);
+        alert(`از خرید ${product?.name} متشکریم! حساب کاربری شما ارتقا یافت.`);
         navigate('/store');
     };
 
     if (!product) {
-        return <div>Loading...</div>;
+        return <div>در حال بارگذاری...</div>;
     }
     
     const Icon = product.icon;
@@ -34,7 +34,7 @@ const ProductDetailPage: React.FC = () => {
     return (
         <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
             <Header title={product.name} showBackButton />
-            <div className="flex-grow flex flex-col justify-between p-6">
+            <div className="flex-grow flex flex-col justify-between p-6 overflow-y-auto">
                 <div className="text-center">
                     <div className="w-24 h-24 bg-pink-100 dark:bg-pink-900 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Icon className="h-12 w-12 text-pink-500" />
@@ -43,16 +43,16 @@ const ProductDetailPage: React.FC = () => {
                     <p className="text-lg text-gray-600 dark:text-gray-300">{product.description}</p>
                 </div>
                 
-                <div className="mt-8">
+                <div className="mt-8 flex-none">
                     <div className="text-center mb-6">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Total Price</p>
-                        <p className="text-5xl font-bold text-pink-500">${product.price.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">قیمت کل</p>
+                        <p className="text-5xl font-bold text-pink-500">{product.price.toFixed(2)}$</p>
                     </div>
                     <button 
                         onClick={handlePayment} 
                         className="w-full bg-pink-500 text-white font-bold py-4 px-4 rounded-xl hover:bg-pink-600 transition-colors text-lg"
                     >
-                        Proceed to Payment
+                        پرداخت و فعال‌سازی
                     </button>
                 </div>
             </div>

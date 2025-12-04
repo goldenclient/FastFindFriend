@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MOCK_LOGGED_IN_USER } from '../data/users';
 import { Gender, MaritalStatus, User } from '../types';
-import { ArrowLeftIcon } from '../components/Icon';
+import { ArrowRightIcon } from '../components/Icon';
 
 
 const RegisterPage: React.FC = () => {
@@ -48,7 +49,7 @@ const RegisterPage: React.FC = () => {
             ...formData,
         } as User;
 
-        alert('Registration successful!');
+        alert('ثبت نام با موفقیت انجام شد!');
         login(newUser);
         navigate('/');
     };
@@ -67,17 +68,17 @@ const RegisterPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-100 dark:bg-gray-900 p-6">
+        <div className="flex flex-col h-full bg-gray-100 dark:bg-gray-900 p-6 overflow-y-auto">
             <div className="w-full max-w-sm mx-auto">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-pink-500">Create Account</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Step {step} of 3</p>
+                    <h1 className="text-3xl font-bold text-pink-500">ایجاد حساب کاربری</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">مرحله {step} از 3</p>
                 </div>
                 {renderStep()}
                 <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-                    Already have an account?{' '}
+                    قبلاً ثبت نام کرده‌اید؟{' '}
                     <Link to="/login" className="font-medium text-pink-500 hover:text-pink-400">
-                        Login
+                        وارد شوید
                     </Link>
                 </p>
             </div>
@@ -95,28 +96,28 @@ interface StepProps {
 
 const Step1: React.FC<StepProps> = ({ nextStep, handleChange, formData }) => (
     <form onSubmit={nextStep} className="space-y-4">
-        <InputField name="name" label="Name" value={formData.name!} onChange={handleChange} required />
-        <SelectField name="gender" label="Gender" value={formData.gender!} onChange={handleChange} options={Object.values(Gender)} />
-        <InputField name="location" label="Location" value={formData.location!} onChange={handleChange} placeholder="e.g. Tehran, Iran" required />
-        <InputField name="occupation" label="Occupation" value={formData.occupation!} onChange={handleChange} placeholder="e.g. Software Engineer" required />
-        <button type="submit" className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600">Next</button>
+        <InputField name="name" label="نام" value={formData.name!} onChange={handleChange} required />
+        <SelectField name="gender" label="جنسیت" value={formData.gender!} onChange={handleChange} options={Object.values(Gender)} />
+        <InputField name="location" label="مکان" value={formData.location!} onChange={handleChange} placeholder="مثلاً تهران، ایران" required />
+        <InputField name="occupation" label="شغل" value={formData.occupation!} onChange={handleChange} placeholder="مثلاً مهندس نرم‌افزار" required />
+        <button type="submit" className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600">بعدی</button>
     </form>
 );
 
 const Step2: React.FC<StepProps> = ({ nextStep, prevStep, handleChange, formData }) => (
     <form onSubmit={nextStep} className="space-y-4">
-        <SelectField name="maritalStatus" label="Marital Status" value={formData.maritalStatus!} onChange={handleChange} options={Object.values(MaritalStatus)} />
-        <InputField name="height" label="Height (cm)" type="number" value={String(formData.height!)} onChange={handleChange} required />
-        <InputField name="weight" label="Weight (kg)" type="number" value={String(formData.weight!)} onChange={handleChange} required />
-        <InputField name="favoriteSport" label="Favorite Sport" value={formData.favoriteSport!} onChange={handleChange} placeholder="e.g. Soccer" />
+        <SelectField name="maritalStatus" label="وضعیت تاهل" value={formData.maritalStatus!} onChange={handleChange} options={Object.values(MaritalStatus)} />
+        <InputField name="height" label="قد (سانتی‌متر)" type="number" value={String(formData.height!)} onChange={handleChange} required />
+        <InputField name="weight" label="وزن (کیلوگرم)" type="number" value={String(formData.weight!)} onChange={handleChange} required />
+        <InputField name="favoriteSport" label="ورزش مورد علاقه" value={formData.favoriteSport!} onChange={handleChange} placeholder="مثلاً فوتبال" />
         <NavigationButtons onBack={prevStep!} />
     </form>
 );
 
 const Step3: React.FC<StepProps> = ({ handleSubmit, prevStep, handleChange, formData }) => (
     <form onSubmit={handleSubmit} className="space-y-4">
-        <TextAreaField name="bio" label="About Me" value={formData.bio!} onChange={handleChange} rows={3} placeholder="Tell us something about yourself..." />
-        <TextAreaField name="partnerPreferences" label="About My Ideal Partner" value={formData.partnerPreferences!} onChange={handleChange} rows={3} placeholder="Describe the person you are looking for..." />
+        <TextAreaField name="bio" label="درباره من" value={formData.bio!} onChange={handleChange} rows={3} placeholder="کمی درباره خودتان بگویید..." />
+        <TextAreaField name="partnerPreferences" label="درباره شریک ایده‌آل من" value={formData.partnerPreferences!} onChange={handleChange} rows={3} placeholder="شخصی که دنبالش هستید را توصیف کنید..." />
         <NavigationButtons onBack={prevStep!} isSubmit />
     </form>
 );
@@ -146,12 +147,12 @@ const TextAreaField: React.FC<{name: string, label: string, value: string, onCha
 );
 
 const NavigationButtons: React.FC<{onBack: () => void, isSubmit?: boolean}> = ({ onBack, isSubmit }) => (
-    <div className="flex space-x-4">
+    <div className="flex space-x-4 space-x-reverse">
         <button type="button" onClick={onBack} className="w-1/3 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-3 rounded-lg hover:bg-gray-400">
-            <ArrowLeftIcon className="h-5 w-5"/>
+            <ArrowRightIcon className="h-5 w-5"/>
         </button>
         <button type={isSubmit ? 'submit' : 'submit'} className="w-2/3 bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600">
-            {isSubmit ? 'Finish' : 'Next'}
+            {isSubmit ? 'پایان' : 'بعدی'}
         </button>
     </div>
 );

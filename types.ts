@@ -1,17 +1,18 @@
+
 import React from 'react';
 
 export enum Gender {
-  Male = 'Male',
-  Female = 'Female',
-  Other = 'Other'
+  Male = 'مرد',
+  Female = 'زن',
+  Other = 'سایر'
 }
 
 export enum MaritalStatus {
-  Single = 'Single',
-  Married = 'Married',
-  Divorced = 'Divorced',
-  Widowed = 'Widowed',
-  InRelationship = 'In a relationship'
+  Single = 'مجرد',
+  Married = 'متاهل',
+  Divorced = 'مطلقه',
+  Widowed = 'بیوه',
+  InRelationship = 'در رابطه'
 }
 
 export interface User {

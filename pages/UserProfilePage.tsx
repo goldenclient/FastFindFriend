@@ -23,8 +23,8 @@ const UserProfilePage: React.FC = () => {
   }, [userId, navigate]);
 
   const handleReport = () => {
-    if (window.confirm(`Are you sure you want to report ${user?.name}?`)) {
-      alert(`${user?.name} has been reported.`);
+    if (window.confirm(`آیا مطمئن هستید که می‌خواهید ${user?.name} را گزارش کنید؟`)) {
+      alert(`${user?.name} گزارش شد.`);
     }
   };
   
@@ -33,7 +33,7 @@ const UserProfilePage: React.FC = () => {
   };
 
   if (!user) {
-    return <div>Loading...</div>;
+    return <div>در حال بارگذاری...</div>;
   }
 
   return (
@@ -43,39 +43,39 @@ const UserProfilePage: React.FC = () => {
         <div className="relative">
           <img src={user.photo} alt={user.name} className="w-full h-80 object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 p-6">
-            <h1 className="text-3xl font-bold text-white">{user.name}, {user.age}</h1>
+          <div className="absolute bottom-0 right-0 p-6 text-right w-full">
+            <h1 className="text-3xl font-bold text-white">{user.name}، {user.age}</h1>
             <p className="text-gray-200">{user.occupation} • {user.location}</p>
           </div>
         </div>
         
         <div className="p-6 space-y-6">
-          <ProfileSection title="About Me">
+          <ProfileSection title="درباره من">
             <p>{user.bio}</p>
           </ProfileSection>
 
-          <ProfileSection title="Details">
+          <ProfileSection title="جزئیات">
             <div className="grid grid-cols-2 gap-4">
-              <DetailItem label="Marital Status" value={user.maritalStatus} />
-              <DetailItem label="Height" value={`${user.height} cm`} />
-              <DetailItem label="Weight" value={`${user.weight} kg`} />
-              <DetailItem label="Favorite Sport" value={user.favoriteSport} />
+              <DetailItem label="وضعیت تاهل" value={user.maritalStatus} />
+              <DetailItem label="قد" value={`${user.height} سانتی‌متر`} />
+              <DetailItem label="وزن" value={`${user.weight} کیلوگرم`} />
+              <DetailItem label="ورزش مورد علاقه" value={user.favoriteSport} />
             </div>
           </ProfileSection>
 
-          <ProfileSection title="Looking for...">
+          <ProfileSection title="دنبال چی می‌گردم...">
             <p>{user.partnerPreferences}</p>
           </ProfileSection>
         </div>
       </div>
       
-      <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 p-4 flex justify-around items-center">
-        <ActionButton icon={FlagIcon} onClick={handleReport} label="Report" />
-        <ActionButton icon={BookmarkIcon} onClick={() => setIsBookmarked(!isBookmarked)} active={isBookmarked} label="Bookmark" />
+      <div className="flex-none sticky bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 p-4 flex justify-around items-center">
+        <ActionButton icon={FlagIcon} onClick={handleReport} label="گزارش" />
+        <ActionButton icon={BookmarkIcon} onClick={() => setIsBookmarked(!isBookmarked)} active={isBookmarked} label="نشان کردن" />
         <button onClick={handleSendMessage} className="p-4 rounded-full bg-white dark:bg-gray-700 text-pink-500 shadow-lg transform hover:scale-110 transition-transform">
           <ChatBubbleOvalLeftEllipsisIcon className="h-8 w-8" />
         </button>
-        <ActionButton icon={HeartIcon} onClick={() => setIsLiked(!isLiked)} active={isLiked} label="Like" />
+        <ActionButton icon={HeartIcon} onClick={() => setIsLiked(!isLiked)} active={isLiked} label="لایک" />
       </div>
     </div>
   );

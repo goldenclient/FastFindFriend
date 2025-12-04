@@ -5,17 +5,17 @@ import { HomeIcon, HeartIcon, ChatBubbleOvalLeftEllipsisIcon, UserCircleIcon } f
 
 const BottomNavBar: React.FC = () => {
   const navItems = [
-    { path: '/', icon: HomeIcon, label: 'Home' },
-    { path: '/likes', icon: HeartIcon, label: 'Likes' },
-    { path: '/chats', icon: ChatBubbleOvalLeftEllipsisIcon, label: 'Chats' },
-    { path: '/profile', icon: UserCircleIcon, label: 'Profile' },
+    { path: '/', icon: HomeIcon, label: 'خانه' },
+    { path: '/likes', icon: HeartIcon, label: 'علاقه‌مندی' },
+    { path: '/chats', icon: ChatBubbleOvalLeftEllipsisIcon, label: 'پیام‌ها' },
+    { path: '/profile', icon: UserCircleIcon, label: 'پروفایل' },
   ];
 
   const activeLinkClass = "text-pink-500";
   const inactiveLinkClass = "text-gray-400 hover:text-pink-400";
 
   return (
-    <nav className="sticky bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 shadow-lg">
+    <nav className="flex-none sticky bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
       <div className="max-w-md mx-auto flex justify-around p-2">
         {navItems.map((item) => {
           const Icon = item.icon;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -28,7 +29,7 @@ const EditProfilePage: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         updateUser(formData);
-        alert('Profile updated successfully!');
+        alert('پروفایل با موفقیت بروزرسانی شد!');
         navigate('/profile');
     };
     
@@ -36,23 +37,23 @@ const EditProfilePage: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full">
-            <Header title="Edit Profile" showBackButton />
+            <Header title="ویرایش پروفایل" showBackButton />
             <div className="flex-grow p-6 overflow-y-auto bg-gray-50 dark:bg-gray-900">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <InputField name="name" label="Name" value={formData.name || ''} onChange={handleChange} required />
-                    <SelectField name="gender" label="Gender" value={formData.gender || Gender.Female} onChange={handleChange} options={Object.values(Gender)} />
-                    <InputField name="location" label="Location" value={formData.location || ''} onChange={handleChange} placeholder="e.g. Tehran, Iran" required />
-                    <InputField name="occupation" label="Occupation" value={formData.occupation || ''} onChange={handleChange} placeholder="e.g. Software Engineer" required />
-                    <SelectField name="maritalStatus" label="Marital Status" value={formData.maritalStatus || MaritalStatus.Single} onChange={handleChange} options={Object.values(MaritalStatus)} />
-                    <InputField name="height" label="Height (cm)" type="number" value={String(formData.height || 0)} onChange={handleChange} required />
-                    <InputField name="weight" label="Weight (kg)" type="number" value={String(formData.weight || 0)} onChange={handleChange} required />
-                    <InputField name="favoriteSport" label="Favorite Sport" value={formData.favoriteSport || ''} onChange={handleChange} placeholder="e.g. Soccer" />
-                    <TextAreaField name="bio" label="About Me" value={formData.bio || ''} onChange={handleChange} rows={3} placeholder="Tell us something about yourself..." />
-                    <TextAreaField name="partnerPreferences" label="About My Ideal Partner" value={formData.partnerPreferences || ''} onChange={handleChange} rows={3} placeholder="Describe the person you are looking for..." />
+                    <InputField name="name" label="نام" value={formData.name || ''} onChange={handleChange} required />
+                    <SelectField name="gender" label="جنسیت" value={formData.gender || Gender.Female} onChange={handleChange} options={Object.values(Gender)} />
+                    <InputField name="location" label="مکان" value={formData.location || ''} onChange={handleChange} placeholder="مثلاً تهران، ایران" required />
+                    <InputField name="occupation" label="شغل" value={formData.occupation || ''} onChange={handleChange} placeholder="مثلاً مهندس نرم‌افزار" required />
+                    <SelectField name="maritalStatus" label="وضعیت تاهل" value={formData.maritalStatus || MaritalStatus.Single} onChange={handleChange} options={Object.values(MaritalStatus)} />
+                    <InputField name="height" label="قد (سانتی‌متر)" type="number" value={String(formData.height || 0)} onChange={handleChange} required />
+                    <InputField name="weight" label="وزن (کیلوگرم)" type="number" value={String(formData.weight || 0)} onChange={handleChange} required />
+                    <InputField name="favoriteSport" label="ورزش مورد علاقه" value={formData.favoriteSport || ''} onChange={handleChange} placeholder="مثلاً فوتبال" />
+                    <TextAreaField name="bio" label="درباره من" value={formData.bio || ''} onChange={handleChange} rows={3} placeholder="کمی درباره خودتان بگویید..." />
+                    <TextAreaField name="partnerPreferences" label="درباره شریک ایده‌آل من" value={formData.partnerPreferences || ''} onChange={handleChange} rows={3} placeholder="شخصی که دنبالش هستید را توصیف کنید..." />
 
-                    <div className="pt-4">
+                    <div className="pt-4 pb-8">
                         <button type="submit" className="w-full bg-pink-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-pink-600 transition-colors duration-300">
-                            Save Changes
+                            ذخیره تغییرات
                         </button>
                     </div>
                 </form>
