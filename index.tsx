@@ -1,6 +1,8 @@
+
 import React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import App from './App';
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -13,3 +15,6 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// ثبت سرویس ورکر برای قابلیت‌های آفلاین و PWA
+serviceWorkerRegistration.register();
