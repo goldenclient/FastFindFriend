@@ -8,6 +8,7 @@ import { FunnelIcon, EyeSlashIcon } from '../components/Icon';
 import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import PremiumModal from '../components/PremiumModal';
+import StoryTray from '../components/StoryTray';
 
 const HomePage: React.FC = () => {
   const { currentUser, updateUser } = useAuth();
@@ -77,17 +78,23 @@ const HomePage: React.FC = () => {
             </div>
         }
       />
-      <div className="flex-grow p-2 grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto">
-        {users.length > 0 ? (
-            users.map(user => (
-              <UserCard key={user.id} user={user} />
-            ))
-        ) : (
-            <div className="col-span-2 sm:col-span-3 flex items-center justify-center h-40">
-                <p className="text-gray-500">کاربری با این مشخصات یافت نشد.</p>
-            </div>
-        )}
+      
+      <div className="flex-grow overflow-y-auto">
+        <StoryTray users={users} />
+        
+        <div className="p-2 pb-20 columns-2 gap-2 space-y-2">
+            {users.length > 0 ? (
+                users.map((user, index) => (
+                  <UserCard key={user.id} user={user} index={index} />
+                ))
+            ) : (
+                <div className="flex items-center justify-center h-40 w-full col-span-full">
+                    <p className="text-gray-500">کاربری با این مشخصات یافت نشد.</p>
+                </div>
+            )}
+        </div>
       </div>
+
       {isFilterOpen && (
         <FilterModal 
           onClose={() => setIsFilterOpen(false)} 
@@ -101,26 +108,41 @@ const HomePage: React.FC = () => {
   );
 };
 
-const UserCard: React.FC<{ user: User }> = ({ user }) => {
+const UserCard: React.FC<{ user: User, index: number }> = ({ user, index }) => {
+    // Determine aspect ratio based on index to create a staggered/masonry look
+    // 0: square, 1: portrait (tall), 2: square, 3: landscape (short)
+    const aspectClass = [
+        'aspect-[1/1]', 
+        'aspect-[3/4]', 
+        'aspect-[1/1]',
+        'aspect-[4/3]'
+    ][index % 4];
+
     return (
-        <Link to={`/user/${user.id}`} className="relative group overflow-hidden rounded-lg shadow-lg aspect-w-1 aspect-h-1 block">
-            <img src={user.photo} alt={user.name} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+        <Link to={`/user/${user.id}`} className={`relative group overflow-hidden rounded-2xl shadow-md mb-2 break-inside-avoid block transform transition-all duration-300 hover:-translate-y-1 ${aspectClass} bg-gray-200 dark:bg-gray-800`}>
+            <img 
+                src={user.photo} 
+                alt={user.name} 
+                className="w-full h-full object-cover absolute inset-0" 
+                loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90"></div>
+            
             <div className="absolute top-2 right-2 flex flex-col space-y-1">
                 {user.isOnline && (
-                    <span className="bg-green-500 border-2 border-white dark:border-gray-800 w-3 h-3 rounded-full" title="آنلاین"></span>
+                    <span className="bg-green-500 border-2 border-white dark:border-gray-800 w-3 h-3 rounded-full shadow-sm" title="آنلاین"></span>
                 )}
             </div>
+            
             <div className="absolute bottom-0 right-0 p-3 text-right w-full">
-                <h3 className="text-white font-bold text-lg">{user.name}، {user.age}</h3>
+                <h3 className="text-white font-bold text-lg drop-shadow-md">{user.name}، {user.age}</h3>
                 <div className="flex justify-between items-end">
-                     <p className="text-gray-200 text-xs">{user.location}</p>
-                     <p className="text-pink-400 text-xs font-bold">{user.distance} km</p>
+                     <p className="text-gray-200 text-xs drop-shadow-sm truncate pl-1">{user.location.split('،')[0]}</p>
+                     <p className="text-pink-400 text-xs font-bold bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded-md">{user.distance} km</p>
                 </div>
             </div>
         </Link>
     );
 };
-
 
 export default HomePage;
