@@ -70,6 +70,7 @@ const HomePage: React.FC = () => {
                 <FunnelIcon className="h-6 w-6" />
             </button>
         }
+        isGhostMode={currentUser?.isGhostMode}
       />
       
       <div className="flex-grow overflow-y-auto">
@@ -134,10 +135,10 @@ const UserCard: React.FC<{ user: User, index: number }> = ({ user, index }) => {
             </div>
             
             <div className="absolute bottom-0 right-0 p-3 text-right w-full">
-                <h3 className="text-white font-bold text-lg drop-shadow-md">{user.name}، {user.age}</h3>
+                <h3 className="text-white font-bold text-lg drop-shadow-md">{user.name}</h3>
                 <div className="flex justify-between items-end">
                      <p className="text-gray-200 text-xs drop-shadow-sm truncate pl-1">{user.location.split('،')[0]}</p>
-                     <p className="text-pink-400 text-xs font-bold bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded-md">{user.distance} km</p>
+                     <p className="text-pink-400 text-xs font-bold bg-white/20 backdrop-blur-sm px-1.5 py-0.5 rounded-md">{user.age} سال</p>
                 </div>
             </div>
         </Link>

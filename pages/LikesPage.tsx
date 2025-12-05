@@ -28,7 +28,7 @@ const LikesPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-      <Header title="علاقه‌مندی‌ها" />
+      <Header title="علاقه‌مندی‌ها" showBackButton={true} />
       <div className="border-b border-gray-200 dark:border-gray-700 flex-none">
         <div className="flex justify-around">
           <button 

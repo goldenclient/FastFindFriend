@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { Cog6ToothIcon, StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, PlusIcon, TrashIcon, CameraIcon, EyeSlashIcon, CogIcon } from '../components/Icon';
+import { StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, PlusIcon, TrashIcon, CameraIcon, EyeSlashIcon, CogIcon, PencilSquareIcon, ShoppingBagIcon } from '../components/Icon';
 import PremiumModal from '../components/PremiumModal';
 import ImageLightbox from '../components/ImageLightbox';
 
@@ -36,6 +36,14 @@ const MyProfilePage: React.FC = () => {
       const file = e.target.files[0];
       const imageUrl = URL.createObjectURL(file);
       const currentGallery = currentUser.gallery || [];
+      const galleryLimit = currentUser.isPremium ? 6 : 2;
+      
+      if (currentGallery.length >= galleryLimit) {
+          setPremiumMessage(currentUser.isPremium ? 'شما به سقف گالری خود رسیده‌اید.' : 'کاربران عادی تنها امکان آپلود ۲ عکس را دارند. برای بیشتر، پنل را ارتقا دهید.');
+          setShowPremiumModal(true);
+          return;
+      }
+      
       updateUser({ gallery: [...currentGallery, imageUrl] });
     }
   };
@@ -66,24 +74,34 @@ const MyProfilePage: React.FC = () => {
   };
 
   const menuItems = [
-    { label: 'بازدیدکنندگان (Visitors)', to: '/visitors', icon: UserCircleIcon },
-    { label: 'لایک‌ها (Likes)', to: '/likes', icon: HeartIcon },
-    { label: 'نشان‌شده‌ها (Bookmarks)', to: '/bookmarks', icon: BookmarkIcon },
-    { label: 'مسدود شده‌ها (Blocked)', to: '/blocked', icon: UserCircleIcon },
+    { label: 'بازدیدکنندگان', to: '/visitors', icon: UserCircleIcon },
+    { label: 'لایک‌ها', to: '/likes', icon: HeartIcon },
+    { label: 'نشان‌شده‌ها', to: '/bookmarks', icon: BookmarkIcon },
+    { label: 'مسدود شده‌ها', to: '/blocked', icon: UserCircleIcon },
+    { label: 'فروشگاه', to: '/store', icon: ShoppingBagIcon },
     { label: 'تنظیمات', to: '/settings', icon: CogIcon },
   ];
+
+  const galleryLimit = currentUser.isPremium ? 6 : 2;
+  const displayGallery = (currentUser.gallery || []).slice(0, galleryLimit);
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header 
         title="پروفایل من" 
         isGhostMode={currentUser?.isGhostMode}
+        rightAction={
+            <Link to="/edit-profile" className={`p-2 ${currentUser?.isGhostMode ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'} hover:text-pink-500`}>
+                <PencilSquareIcon className="h-6 w-6" />
+            </Link>
+        }
         action={
             <button 
                 onClick={handleGhostModeToggle} 
-                className={`p-2 rounded-full transition-colors ${currentUser.isGhostMode ? 'bg-white text-gray-800' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
+                className={`flex items-center p-2 rounded-full transition-colors ${currentUser.isGhostMode ? 'bg-white text-gray-800' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
                 title="حالت روح"
             >
+                {currentUser.isGhostMode && <span className="text-xs font-bold ml-2">حالت روح فعال</span>}
                 <EyeSlashIcon className="h-6 w-6" />
             </button>
         }
@@ -97,6 +115,11 @@ const MyProfilePage: React.FC = () => {
                     className="w-28 h-28 rounded-full object-cover mx-auto ring-4 ring-pink-500 cursor-pointer" 
                     onClick={() => setLightboxImage(currentUser.photo)}
                 />
+                {currentUser.isPremium && (
+                    <div className="absolute bottom-0 left-0 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md border border-white transform -translate-x-1 translate-y-1">
+                        VIP
+                    </div>
+                )}
                 <label className="absolute bottom-0 right-0 bg-pink-500 text-white p-2 rounded-full cursor-pointer hover:bg-pink-600 transition-colors shadow-lg">
                     <CameraIcon className="h-5 w-5" />
                     <input type="file" className="hidden" accept="image/*" onChange={handleProfilePhotoUpload} />
@@ -106,17 +129,29 @@ const MyProfilePage: React.FC = () => {
             <h2 className="mt-4 text-2xl font-bold">{currentUser.name}، {currentUser.age}</h2>
             {currentUser.isPremium && <span className="inline-block bg-yellow-400 text-yellow-900 text-xs px-2 py-0.5 rounded-full font-bold mb-1">کاربر ویژه</span>}
             <p className="text-gray-500">{currentUser.occupation}</p>
-            <div className="mt-4 flex justify-center space-x-4">
-                <Link to="/edit-profile" className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-lg flex items-center justify-center">
-                    <Cog6ToothIcon className="h-5 w-5 ml-2" /> ویرایش پروفایل
-                </Link>
-            </div>
           </div>
           
+          {!currentUser.isPremium && (
+             <div className="px-4 mb-4">
+                <Link to="/store" className="block w-full text-right p-4 rounded-lg bg-gradient-to-l from-pink-500 to-orange-400 text-white shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-lg">ارتقا پنل به اشتراک ویژه</h3>
+                      <p className="text-sm">امکانات بیشتر با نسخه ویژه!</p>
+                    </div>
+                    <StarIcon className="h-8 w-8" />
+                  </div>
+                </Link>
+              </div>
+          )}
+          
           <div className="px-4 py-2 mb-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">گالری تصاویر من</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 flex justify-between items-center">
+                <span>گالری تصاویر من</span>
+                <span className="text-xs text-gray-400 font-normal">({displayGallery.length} از {galleryLimit})</span>
+            </h3>
             <div className="grid grid-cols-3 gap-2">
-                {currentUser.gallery?.map((photo, index) => (
+                {displayGallery.map((photo, index) => (
                     <div key={index} className="relative group aspect-square cursor-pointer" onClick={() => setLightboxImage(photo)}>
                         <img src={photo} alt={`User photo ${index}`} className="w-full h-full object-cover rounded-lg" />
                         <button 
@@ -127,23 +162,13 @@ const MyProfilePage: React.FC = () => {
                         </button>
                     </div>
                 ))}
-                <label className="flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <PlusIcon className="w-8 h-8 text-gray-400" />
-                    <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-                </label>
+                {displayGallery.length < galleryLimit && (
+                    <label className="flex flex-col items-center justify-center w-full aspect-square border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <PlusIcon className="w-8 h-8 text-gray-400" />
+                        <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                    </label>
+                )}
             </div>
-          </div>
-
-          <div className="px-4">
-            <Link to="/store" className="block w-full text-right p-4 mb-4 rounded-lg bg-gradient-to-l from-pink-500 to-orange-400 text-white shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-lg">ارتقا پنل به اشتراک ویژه</h3>
-                  <p className="text-sm">امکانات بیشتر با نسخه ویژه!</p>
-                </div>
-                <StarIcon className="h-8 w-8" />
-              </div>
-            </Link>
           </div>
 
           <div className="px-4 space-y-2">
