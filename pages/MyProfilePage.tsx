@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { Cog6ToothIcon, StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, PlusIcon, TrashIcon, CameraIcon, EyeSlashIcon } from '../components/Icon';
+import { Cog6ToothIcon, StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, PlusIcon, TrashIcon, CameraIcon, EyeSlashIcon, CogIcon } from '../components/Icon';
 import PremiumModal from '../components/PremiumModal';
 import ImageLightbox from '../components/ImageLightbox';
 
@@ -70,16 +70,18 @@ const MyProfilePage: React.FC = () => {
     { label: 'لایک‌ها (Likes)', to: '/likes', icon: HeartIcon },
     { label: 'نشان‌شده‌ها (Bookmarks)', to: '/bookmarks', icon: BookmarkIcon },
     { label: 'مسدود شده‌ها (Blocked)', to: '/blocked', icon: UserCircleIcon },
+    { label: 'تنظیمات', to: '/settings', icon: CogIcon },
   ];
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header 
         title="پروفایل من" 
+        isGhostMode={currentUser?.isGhostMode}
         action={
             <button 
                 onClick={handleGhostModeToggle} 
-                className={`p-2 rounded-full transition-colors ${currentUser.isGhostMode ? 'bg-gray-800 text-white' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
+                className={`p-2 rounded-full transition-colors ${currentUser.isGhostMode ? 'bg-white text-gray-800' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
                 title="حالت روح"
             >
                 <EyeSlashIcon className="h-6 w-6" />

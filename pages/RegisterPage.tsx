@@ -8,7 +8,11 @@ import { ArrowRightIcon } from '../components/Icon';
 
 
 const RegisterPage: React.FC = () => {
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(0); // 0: Mobile/OTP, 1: Basic Info, 2: Details, 3: Bio
+    const [mobile, setMobile] = useState('');
+    const [otp, setOtp] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+
     const [formData, setFormData] = useState<Partial<User>>({
         name: '',
         gender: Gender.Female,
@@ -39,10 +43,27 @@ const RegisterPage: React.FC = () => {
         }));
     };
 
+    const handleSendCode = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (mobile.length >= 10) {
+            setOtpSent(true);
+        } else {
+            alert('لطفاً شماره موبایل معتبر وارد کنید.');
+        }
+    };
+
+    const handleVerifyOtp = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (otp.length === 4) {
+            setStep(1);
+        } else {
+            alert('کد تایید صحیح نیست.');
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // In a real app, you would submit the data to a server.
-        // For this mock, we'll create a new user object and log in.
         const newUser: User = {
             id: 'newUser',
             ...MOCK_LOGGED_IN_USER,
@@ -56,6 +77,24 @@ const RegisterPage: React.FC = () => {
 
     const renderStep = () => {
         switch (step) {
+            case 0:
+                return (
+                    <div className="space-y-6">
+                         {!otpSent ? (
+                            <form onSubmit={handleSendCode} className="space-y-4">
+                                <InputField name="mobile" label="شماره موبایل" value={mobile} onChange={(e: any) => setMobile(e.target.value)} placeholder="09123456789" type="tel" required />
+                                <button type="submit" className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600">ارسال کد تایید</button>
+                            </form>
+                         ) : (
+                            <form onSubmit={handleVerifyOtp} className="space-y-4">
+                                <p className="text-sm text-center text-gray-500">کد ارسال شده به {mobile} را وارد کنید</p>
+                                <InputField name="otp" label="کد تایید" value={otp} onChange={(e: any) => setOtp(e.target.value)} placeholder="----" required />
+                                <button type="submit" className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600">تایید و ادامه</button>
+                                <button type="button" onClick={() => setOtpSent(false)} className="w-full text-sm text-gray-500 mt-2">اصلاح شماره موبایل</button>
+                            </form>
+                         )}
+                    </div>
+                );
             case 1:
                 return <Step1 nextStep={nextStep} handleChange={handleChange} formData={formData} />;
             case 2:
@@ -72,7 +111,7 @@ const RegisterPage: React.FC = () => {
             <div className="w-full max-w-sm mx-auto">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-pink-500">ایجاد حساب کاربری</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">مرحله {step} از 3</p>
+                    {step > 0 && <p className="text-gray-500 dark:text-gray-400 mt-1">مرحله {step} از 3</p>}
                 </div>
                 {renderStep()}
                 <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">

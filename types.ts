@@ -15,6 +15,13 @@ export enum MaritalStatus {
   InRelationship = 'در رابطه'
 }
 
+export interface UserSettings {
+  newLikeNotification: boolean;
+  newMessageNotification: boolean;
+  biometricLogin: boolean;
+  profileViewNotification: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -34,6 +41,7 @@ export interface User {
   gallery?: string[]; // List of photo URLs
   isPremium?: boolean;
   isGhostMode?: boolean;
+  settings?: UserSettings;
 }
 
 export interface Message {

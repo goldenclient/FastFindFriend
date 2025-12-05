@@ -1,6 +1,13 @@
 
 import { User, Gender, MaritalStatus } from '../types';
 
+const DEFAULT_SETTINGS = {
+  newLikeNotification: true,
+  newMessageNotification: true,
+  biometricLogin: false,
+  profileViewNotification: true,
+};
+
 export const MOCK_USERS: User[] = [
   {
     id: '1',
@@ -23,7 +30,8 @@ export const MOCK_USERS: User[] = [
       'https://picsum.photos/id/1015/400/400',
       'https://picsum.photos/id/1016/400/400',
       'https://picsum.photos/id/1018/400/400'
-    ]
+    ],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '2',
@@ -45,7 +53,8 @@ export const MOCK_USERS: User[] = [
       'https://picsum.photos/id/1005/400/400',
       'https://picsum.photos/id/1018/400/400',
       'https://picsum.photos/id/1019/400/400'
-    ]
+    ],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '3',
@@ -67,7 +76,8 @@ export const MOCK_USERS: User[] = [
         'https://picsum.photos/id/1011/400/400',
         'https://picsum.photos/id/1020/400/400',
         'https://picsum.photos/id/1021/400/400'
-    ]
+    ],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '4',
@@ -88,7 +98,8 @@ export const MOCK_USERS: User[] = [
     gallery: [
         'https://picsum.photos/id/1012/400/400',
         'https://picsum.photos/id/1022/400/400'
-    ]
+    ],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '5',
@@ -109,7 +120,8 @@ export const MOCK_USERS: User[] = [
     gallery: [
         'https://picsum.photos/id/1025/400/400',
         'https://picsum.photos/id/1024/400/400'
-    ]
+    ],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '6',
@@ -130,7 +142,8 @@ export const MOCK_USERS: User[] = [
     gallery: [
         'https://picsum.photos/id/1062/400/400',
         'https://picsum.photos/id/1063/400/400'
-    ]
+    ],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '7',
@@ -148,7 +161,8 @@ export const MOCK_USERS: User[] = [
     partnerPreferences: 'یه نفر که پایه‌ی طبیعت‌گردی باشه و از سکوت لذت ببره.',
     isOnline: true,
     distance: 15,
-    gallery: ['https://picsum.photos/id/338/400/400']
+    gallery: ['https://picsum.photos/id/338/400/400'],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '8',
@@ -166,7 +180,8 @@ export const MOCK_USERS: User[] = [
     partnerPreferences: 'کسی که ساده و بی‌آلایش باشه.',
     isOnline: true,
     distance: 20,
-    gallery: ['https://picsum.photos/id/433/400/400']
+    gallery: ['https://picsum.photos/id/433/400/400'],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '9',
@@ -184,7 +199,8 @@ export const MOCK_USERS: User[] = [
     partnerPreferences: 'کسی که شرایط کاری من رو درک کنه و حامی باشه.',
     isOnline: false,
     distance: 60,
-    gallery: ['https://picsum.photos/id/64/400/400']
+    gallery: ['https://picsum.photos/id/64/400/400'],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '10',
@@ -202,7 +218,8 @@ export const MOCK_USERS: User[] = [
     partnerPreferences: 'یه همسفر شجاع برای ماجراجویی.',
     isOnline: true,
     distance: 100,
-    gallery: ['https://picsum.photos/id/91/400/400']
+    gallery: ['https://picsum.photos/id/91/400/400'],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '11',
@@ -220,7 +237,8 @@ export const MOCK_USERS: User[] = [
     partnerPreferences: 'کسی که هنر رو بفهمه و به سنت‌ها احترام بذاره.',
     isOnline: false,
     distance: 120,
-    gallery: ['https://picsum.photos/id/823/400/400']
+    gallery: ['https://picsum.photos/id/823/400/400'],
+    settings: DEFAULT_SETTINGS
   },
   {
     id: '12',
@@ -238,7 +256,8 @@ export const MOCK_USERS: User[] = [
     partnerPreferences: 'دختری که دریا رو دوست داشته باشه.',
     isOnline: true,
     distance: 90,
-    gallery: ['https://picsum.photos/id/22/400/400']
+    gallery: ['https://picsum.photos/id/22/400/400'],
+    settings: DEFAULT_SETTINGS
   }
 ];
 
@@ -264,5 +283,6 @@ export const MOCK_LOGGED_IN_USER: User = {
       'https://picsum.photos/id/237/400/400',
       'https://picsum.photos/id/1069/400/400',
       'https://picsum.photos/id/1074/400/400'
-    ]
+    ],
+    settings: DEFAULT_SETTINGS
 };

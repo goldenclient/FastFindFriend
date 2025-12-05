@@ -16,6 +16,7 @@ import BlockedListPage from './pages/BlockedListPage';
 import BookmarksListPage from './pages/BookmarksListPage';
 import VisitorsListPage from './pages/VisitorsListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import SettingsPage from './pages/SettingsPage';
 import BottomNavBar from './components/BottomNavBar';
 
 const App: React.FC = () => {
@@ -54,6 +55,7 @@ const AppContent: React.FC = () => {
               <Route path="/store" element={<StorePage />} />
               <Route path="/product/:productId" element={<ProductDetailPage />} />
               <Route path="/edit-profile" element={<EditProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="/blocked" element={<BlockedListPage />} />
               <Route path="/bookmarks" element={<BookmarksListPage />} />
               <Route path="/visitors" element={<VisitorsListPage />} />

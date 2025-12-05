@@ -61,16 +61,17 @@ const HomePage: React.FC = () => {
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       <Header 
         title="کاوش" 
+        isGhostMode={currentUser?.isGhostMode}
         action={
             <div className="flex space-x-2 space-x-reverse">
                 <button 
                     onClick={handleGhostModeToggle} 
-                    className={`p-1 rounded-full transition-colors ${currentUser?.isGhostMode ? 'bg-gray-800 text-white' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
+                    className={`p-1 rounded-full transition-colors ${currentUser?.isGhostMode ? 'bg-white text-gray-800' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
                     title="حالت روح"
                 >
                     <EyeSlashIcon className="h-6 w-6" />
                 </button>
-                <button onClick={() => setIsFilterOpen(true)} className="text-gray-600 dark:text-gray-300 hover:text-pink-500 dark:hover:text-pink-400">
+                <button onClick={() => setIsFilterOpen(true)} className={`${currentUser?.isGhostMode ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'} hover:text-pink-500`}>
                     <FunnelIcon className="h-6 w-6" />
                 </button>
             </div>
