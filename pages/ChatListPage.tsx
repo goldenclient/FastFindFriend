@@ -33,7 +33,7 @@ const ChatListPage: React.FC = () => {
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header title="گفتگوها" />
       <div className="flex-grow overflow-y-auto">
-        <div className="border-b border-gray-100 dark:border-gray-800">
+        <div className="bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800">
              <StoryTray users={storyUsers} onViewStory={setSelectedStoryUser} />
         </div>
         

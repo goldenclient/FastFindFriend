@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User } from '../types';
 import { MOCK_USERS } from '../data/users';
 import FilterModal from '../components/FilterModal';
-import { FunnelIcon } from '../components/Icon';
+import { FunnelIcon, HeartIcon } from '../components/Icon';
 import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import PremiumModal from '../components/PremiumModal';
@@ -13,6 +13,7 @@ import StoryViewer from '../components/StoryViewer';
 
 const HomePage: React.FC = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -58,17 +59,25 @@ const HomePage: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       <Header 
-        customContent={<StoryTray users={users} onViewStory={handleViewStory} />}
-        action={
-            <div className="flex space-x-2 space-x-reverse items-center h-full pt-1">
-                <button onClick={() => setIsFilterOpen(true)} className={`${currentUser?.isGhostMode ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'} hover:text-pink-500`}>
-                    <FunnelIcon className="h-6 w-6" />
-                </button>
-            </div>
+        title="دوست‌یاب"
+        rightAction={
+             <Link to="/likes" className={`${currentUser?.isGhostMode ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'} hover:text-pink-500 p-2 -mr-2`}>
+                <HeartIcon className="h-7 w-7" />
+             </Link>
+        }
+        leftAction={
+            <button onClick={() => setIsFilterOpen(true)} className={`${currentUser?.isGhostMode ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'} hover:text-pink-500 p-2 -ml-2`}>
+                <FunnelIcon className="h-6 w-6" />
+            </button>
         }
       />
       
       <div className="flex-grow overflow-y-auto">
+        {/* Story Tray Section */}
+        <div className="bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800">
+             <StoryTray users={users} onViewStory={handleViewStory} large={true} />
+        </div>
+
         <div className="p-2 pb-20 columns-2 gap-2 space-y-2 mt-2">
             {users.length > 0 ? (
                 users.map((user, index) => (
