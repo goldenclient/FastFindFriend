@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MOCK_LOGGED_IN_USER } from '../data/users';
-import { HeartIcon } from '../components/Icon';
 
 const LoginPage: React.FC = () => {
     const [step, setStep] = useState<1 | 2>(1);
@@ -51,13 +50,13 @@ const LoginPage: React.FC = () => {
             <div className="w-full max-w-sm bg-white/90 dark:bg-black/80 backdrop-blur-md rounded-2xl shadow-2xl p-8 animate-fade-in-up">
                 
                 <div className="flex justify-center mb-6">
-                    <div className="bg-white p-3 rounded-full shadow-lg">
-                        <HeartIcon className="h-12 w-12 text-pink-600" />
+                    <div className="p-3">
+                        <img src="/logo.png" alt="3F Logo" className="h-24 w-auto drop-shadow-md" />
                     </div>
                 </div>
 
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">دوست‌یاب</h1>
+                    <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">تری اف</h1>
                     <p className="text-gray-500 dark:text-gray-300 mt-2 text-sm">
                         {step === 1 ? 'شماره موبایل خود را وارد کنید' : 'کد تایید ارسال شده را وارد کنید'}
                     </p>

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRightIcon } from './Icon';
 
 interface HeaderProps {
-  title?: string;
+  title?: React.ReactNode;
   showBackButton?: boolean;
   leftAction?: React.ReactNode; // Renders on the Left side (End in RTL)
   rightAction?: React.ReactNode; // Renders on the Right side (Start in RTL)
@@ -39,7 +39,9 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, leftActi
 
       {/* Center Title */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <h1 className="text-lg font-bold truncate max-w-[60%] pointer-events-auto">{title}</h1>
+          <div className="text-lg font-bold truncate max-w-[60%] pointer-events-auto flex items-center justify-center gap-2">
+            {title}
+          </div>
       </div>
 
       {/* Left Side (End in RTL) */}
