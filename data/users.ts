@@ -21,7 +21,8 @@ export const MOCK_USERS: User[] = [
     gallery: [
       'https://picsum.photos/id/1027/400/400',
       'https://picsum.photos/id/1015/400/400',
-      'https://picsum.photos/id/1016/400/400'
+      'https://picsum.photos/id/1016/400/400',
+      'https://picsum.photos/id/1018/400/400'
     ]
   },
   {
@@ -61,9 +62,14 @@ export const MOCK_USERS: User[] = [
     favoriteSport: 'شنا',
     partnerPreferences: 'دنبال یه فرد متفکر و کنجکاو هستم که هنر و فرهنگ رو درک کنه.',
     isOnline: true,
-    distance: 3
+    distance: 3,
+    gallery: [
+        'https://picsum.photos/id/1011/400/400',
+        'https://picsum.photos/id/1020/400/400',
+        'https://picsum.photos/id/1021/400/400'
+    ]
   },
-    {
+  {
     id: '4',
     name: 'کیان',
     age: 30,
@@ -78,7 +84,11 @@ export const MOCK_USERS: User[] = [
     favoriteSport: 'صخره‌نوردی',
     partnerPreferences: 'دنبال ارتباط واقعی با کسی هستم که دلسوز و فعال باشه.',
     isOnline: false,
-    distance: 25
+    distance: 25,
+    gallery: [
+        'https://picsum.photos/id/1012/400/400',
+        'https://picsum.photos/id/1022/400/400'
+    ]
   },
   {
     id: '5',
@@ -95,7 +105,11 @@ export const MOCK_USERS: User[] = [
     favoriteSport: 'رقص',
     partnerPreferences: 'صداقت، خلاقیت و سلیقه موسیقی خوب برام مهمه. بیایم یه گروه موسیقی مورد علاقه جدید پیدا کنیم.',
     isOnline: true,
-    distance: 8
+    distance: 8,
+    gallery: [
+        'https://picsum.photos/id/1025/400/400',
+        'https://picsum.photos/id/1024/400/400'
+    ]
   },
   {
     id: '6',
@@ -105,14 +119,126 @@ export const MOCK_USERS: User[] = [
     location: 'تبریز، ایران',
     occupation: 'سرآشپز',
     bio: 'عشقم رو با غذا ابراز می‌کنم. اگه از غذای خوب و هم‌صحبتی بهتر لذت می‌بری، با هم کنار میایم.',
-    photo: 'https://picsum.photos/id/103/400/400',
+    photo: 'https://picsum.photos/id/1062/400/400',
     maritalStatus: MaritalStatus.Divorced,
     height: 185,
     weight: 88,
     favoriteSport: 'بسکتبال',
     partnerPreferences: 'یه فرد خونگرم که عاشق خندیدن باشه و از امتحان کردن چیزای جدید نترسه (مخصوصاً غذا!).',
     isOnline: false,
-    distance: 45
+    distance: 45,
+    gallery: [
+        'https://picsum.photos/id/1062/400/400',
+        'https://picsum.photos/id/1063/400/400'
+    ]
+  },
+  {
+    id: '7',
+    name: 'مریم',
+    age: 26,
+    gender: Gender.Female,
+    location: 'رشت، ایران',
+    occupation: 'معلم زبان',
+    bio: 'عاشق بارون و جنگل‌های شمال. آخر هفته‌ها یا کتاب می‌خونم یا میرم پیک‌نیک.',
+    photo: 'https://picsum.photos/id/338/400/400',
+    maritalStatus: MaritalStatus.Single,
+    height: 163,
+    weight: 56,
+    favoriteSport: 'پیاده‌روی',
+    partnerPreferences: 'یه نفر که پایه‌ی طبیعت‌گردی باشه و از سکوت لذت ببره.',
+    isOnline: true,
+    distance: 15,
+    gallery: ['https://picsum.photos/id/338/400/400']
+  },
+  {
+    id: '8',
+    name: 'آرش',
+    age: 31,
+    gender: Gender.Male,
+    location: 'کرج، ایران',
+    occupation: 'مکانیک',
+    bio: 'عاشق ماشین‌های کلاسیک و تعمیرات. دست به آچارم و توی کارم جدی.',
+    photo: 'https://picsum.photos/id/433/400/400',
+    maritalStatus: MaritalStatus.Single,
+    height: 177,
+    weight: 82,
+    favoriteSport: 'بدنسازی',
+    partnerPreferences: 'کسی که ساده و بی‌آلایش باشه.',
+    isOnline: true,
+    distance: 20,
+    gallery: ['https://picsum.photos/id/433/400/400']
+  },
+  {
+    id: '9',
+    name: 'الناز',
+    age: 27,
+    gender: Gender.Female,
+    location: 'اهواز، ایران',
+    occupation: 'پرستار',
+    bio: 'مهربون و صبور. شیفت‌های کاری سخت دارم ولی همیشه لبخند می‌زنم.',
+    photo: 'https://picsum.photos/id/64/400/400',
+    maritalStatus: MaritalStatus.Single,
+    height: 166,
+    weight: 60,
+    favoriteSport: 'والیبال',
+    partnerPreferences: 'کسی که شرایط کاری من رو درک کنه و حامی باشه.',
+    isOnline: false,
+    distance: 60,
+    gallery: ['https://picsum.photos/id/64/400/400']
+  },
+  {
+    id: '10',
+    name: 'بابک',
+    age: 33,
+    gender: Gender.Male,
+    location: 'کرمان، ایران',
+    occupation: 'باستان‌شناس',
+    bio: 'تاریخ رو از زیر خاک بیرون میکشم. سفر به مناطق دورافتاده کار منه.',
+    photo: 'https://picsum.photos/id/91/400/400',
+    maritalStatus: MaritalStatus.Divorced,
+    height: 182,
+    weight: 78,
+    favoriteSport: 'تیراندازی',
+    partnerPreferences: 'یه همسفر شجاع برای ماجراجویی.',
+    isOnline: true,
+    distance: 100,
+    gallery: ['https://picsum.photos/id/91/400/400']
+  },
+  {
+    id: '11',
+    name: 'سمیرا',
+    age: 24,
+    gender: Gender.Female,
+    location: 'یزد، ایران',
+    occupation: 'هنرمند صنایع دستی',
+    bio: 'کارهای هنری با چوب و سفال انجام میدم. عاشق معماری سنتی یزد.',
+    photo: 'https://picsum.photos/id/823/400/400',
+    maritalStatus: MaritalStatus.Single,
+    height: 160,
+    weight: 50,
+    favoriteSport: 'بدمینتون',
+    partnerPreferences: 'کسی که هنر رو بفهمه و به سنت‌ها احترام بذاره.',
+    isOnline: false,
+    distance: 120,
+    gallery: ['https://picsum.photos/id/823/400/400']
+  },
+  {
+    id: '12',
+    name: 'فرهاد',
+    age: 29,
+    gender: Gender.Male,
+    location: 'بوشهر، ایران',
+    occupation: 'ماهیگیر',
+    bio: 'دریا خونه دوم منه. عاشق آرامش و صدای موج‌هام.',
+    photo: 'https://picsum.photos/id/22/400/400',
+    maritalStatus: MaritalStatus.Single,
+    height: 175,
+    weight: 73,
+    favoriteSport: 'شنا',
+    partnerPreferences: 'دختری که دریا رو دوست داشته باشه.',
+    isOnline: true,
+    distance: 90,
+    gallery: ['https://picsum.photos/id/22/400/400']
   }
 ];
 
