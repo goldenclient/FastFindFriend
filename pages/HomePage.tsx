@@ -59,7 +59,7 @@ const HomePage: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       <Header 
-        title="دوست‌یاب"
+        title="3F App"
         rightAction={
              <Link to="/likes" className={`${currentUser?.isGhostMode ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'} hover:text-pink-500 p-2 -mr-2`}>
                 <HeartIcon className="h-7 w-7" />
