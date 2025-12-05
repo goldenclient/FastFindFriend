@@ -39,6 +39,7 @@ export interface User {
   isOnline: boolean;
   distance: number; // in km
   gallery?: string[]; // List of photo URLs
+  story?: string; // URL to story image
   isPremium?: boolean;
   isGhostMode?: boolean;
   settings?: UserSettings;

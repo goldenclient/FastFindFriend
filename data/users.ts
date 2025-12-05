@@ -31,6 +31,7 @@ export const MOCK_USERS: User[] = [
       'https://picsum.photos/id/1016/400/400',
       'https://picsum.photos/id/1018/400/400'
     ],
+    story: 'https://picsum.photos/id/1015/400/800',
     settings: DEFAULT_SETTINGS
   },
   {
@@ -54,6 +55,7 @@ export const MOCK_USERS: User[] = [
       'https://picsum.photos/id/1018/400/400',
       'https://picsum.photos/id/1019/400/400'
     ],
+    story: 'https://picsum.photos/id/1033/400/800',
     settings: DEFAULT_SETTINGS
   },
   {
@@ -99,6 +101,7 @@ export const MOCK_USERS: User[] = [
         'https://picsum.photos/id/1012/400/400',
         'https://picsum.photos/id/1022/400/400'
     ],
+    story: 'https://picsum.photos/id/1035/400/800',
     settings: DEFAULT_SETTINGS
   },
   {
@@ -143,6 +146,7 @@ export const MOCK_USERS: User[] = [
         'https://picsum.photos/id/1062/400/400',
         'https://picsum.photos/id/1063/400/400'
     ],
+    story: 'https://picsum.photos/id/1080/400/800',
     settings: DEFAULT_SETTINGS
   },
   {

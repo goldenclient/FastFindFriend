@@ -1,16 +1,18 @@
 
 import React, { useState } from 'react';
-import { Chat } from '../types';
+import { Chat, User } from '../types';
 import { MOCK_CHATS } from '../data/messages';
 import { MOCK_USERS } from '../data/users';
 import Header from '../components/Header';
 import { Link } from 'react-router-dom';
 import { EllipsisVerticalIcon } from '../components/Icon';
 import StoryTray from '../components/StoryTray';
+import StoryViewer from '../components/StoryViewer';
 
 const ChatListPage: React.FC = () => {
   const [chats, setChats] = useState<Chat[]>(MOCK_CHATS);
-  
+  const [selectedStoryUser, setSelectedStoryUser] = useState<User | null>(null);
+
   // Get unique users from chats to show in the story tray, or just show all mock users
   const storyUsers = MOCK_USERS.slice(0, 8);
 
@@ -31,7 +33,9 @@ const ChatListPage: React.FC = () => {
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header title="گفتگوها" />
       <div className="flex-grow overflow-y-auto">
-        <StoryTray users={storyUsers} />
+        <div className="border-b border-gray-100 dark:border-gray-800">
+             <StoryTray users={storyUsers} onViewStory={setSelectedStoryUser} />
+        </div>
         
         <div className="pb-4">
             {chats.length > 0 ? (
@@ -45,6 +49,10 @@ const ChatListPage: React.FC = () => {
             )}
         </div>
       </div>
+      
+      {selectedStoryUser && (
+          <StoryViewer user={selectedStoryUser} onClose={() => setSelectedStoryUser(null)} />
+      )}
     </div>
   );
 };

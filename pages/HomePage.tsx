@@ -4,18 +4,20 @@ import { Link } from 'react-router-dom';
 import { User } from '../types';
 import { MOCK_USERS } from '../data/users';
 import FilterModal from '../components/FilterModal';
-import { FunnelIcon, EyeSlashIcon } from '../components/Icon';
+import { FunnelIcon } from '../components/Icon';
 import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import PremiumModal from '../components/PremiumModal';
 import StoryTray from '../components/StoryTray';
+import StoryViewer from '../components/StoryViewer';
 
 const HomePage: React.FC = () => {
-  const { currentUser, updateUser } = useAuth();
+  const { currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState('');
+  const [selectedStoryUser, setSelectedStoryUser] = useState<User | null>(null);
   
   const handleApplyFilters = (filters: any) => {
     const { ageRange, gender, location, occupation, onlineNow, hasPhoto, distance } = filters;
@@ -49,29 +51,16 @@ const HomePage: React.FC = () => {
     setIsFilterOpen(false);
   };
 
-  const handleGhostModeToggle = () => {
-      if (currentUser && !currentUser.isPremium) {
-          setPremiumMessage('برای فعال‌سازی حالت روح، باید پنل خود را ارتقا دهید.');
-          setShowPremiumModal(true);
-      } else if (currentUser) {
-          updateUser({ isGhostMode: !currentUser.isGhostMode });
-      }
+  const handleViewStory = (user: User) => {
+      setSelectedStoryUser(user);
   };
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       <Header 
-        title="کاوش" 
-        isGhostMode={currentUser?.isGhostMode}
+        customContent={<StoryTray users={users} onViewStory={handleViewStory} />}
         action={
-            <div className="flex space-x-2 space-x-reverse">
-                <button 
-                    onClick={handleGhostModeToggle} 
-                    className={`p-1 rounded-full transition-colors ${currentUser?.isGhostMode ? 'bg-white text-gray-800' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
-                    title="حالت روح"
-                >
-                    <EyeSlashIcon className="h-6 w-6" />
-                </button>
+            <div className="flex space-x-2 space-x-reverse items-center h-full pt-1">
                 <button onClick={() => setIsFilterOpen(true)} className={`${currentUser?.isGhostMode ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'} hover:text-pink-500`}>
                     <FunnelIcon className="h-6 w-6" />
                 </button>
@@ -80,9 +69,7 @@ const HomePage: React.FC = () => {
       />
       
       <div className="flex-grow overflow-y-auto">
-        <StoryTray users={users} />
-        
-        <div className="p-2 pb-20 columns-2 gap-2 space-y-2">
+        <div className="p-2 pb-20 columns-2 gap-2 space-y-2 mt-2">
             {users.length > 0 ? (
                 users.map((user, index) => (
                   <UserCard key={user.id} user={user} index={index} />
@@ -103,6 +90,9 @@ const HomePage: React.FC = () => {
       )}
       {showPremiumModal && (
           <PremiumModal onClose={() => setShowPremiumModal(false)} message={premiumMessage} />
+      )}
+      {selectedStoryUser && (
+          <StoryViewer user={selectedStoryUser} onClose={() => setSelectedStoryUser(null)} />
       )}
     </div>
   );
