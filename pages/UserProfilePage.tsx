@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { User } from '../types';
 import { MOCK_USERS } from '../data/users';
@@ -8,6 +8,7 @@ import { HeartIcon, BookmarkIcon, FlagIcon, ChatBubbleOvalLeftEllipsisIcon, Lock
 import { useAuth } from '../context/AuthContext';
 import PremiumModal from '../components/PremiumModal';
 import ImageLightbox from '../components/ImageLightbox';
+import StoryViewer from '../components/StoryViewer';
 
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -19,6 +20,9 @@ const UserProfilePage: React.FC = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState('');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [viewingStory, setViewingStory] = useState(false);
 
   useEffect(() => {
     const foundUser = MOCK_USERS.find(u => u.id === userId);
@@ -28,6 +32,14 @@ const UserProfilePage: React.FC = () => {
       navigate('/');
     }
   }, [userId, navigate]);
+
+  const handleScroll = () => {
+      if (scrollRef.current) {
+          // Change state when scrolled past the main image (approx 250px)
+          const scrollTop = scrollRef.current.scrollTop;
+          setIsScrolled(scrollTop > 250);
+      }
+  };
 
   const handleReport = () => {
     if (window.confirm(`آیا مطمئن هستید که می‌خواهید ${user?.name} را گزارش کنید؟`)) {
@@ -48,29 +60,98 @@ const UserProfilePage: React.FC = () => {
       }
   };
 
+  const handleHeaderAvatarClick = () => {
+      if (user?.story) {
+          setViewingStory(true);
+      }
+  };
+
   if (!user) {
     return <div>در حال بارگذاری...</div>;
   }
 
+  // Header Props Logic
+  const headerTitle = (
+      <div className="flex items-center gap-2 transition-all duration-300">
+          {isScrolled && (
+              <div 
+                onClick={handleHeaderAvatarClick}
+                className={`relative w-8 h-8 rounded-full overflow-hidden cursor-pointer ${user.story ? 'ring-2 ring-pink-500' : ''}`}
+              >
+                  <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
+              </div>
+          )}
+          <span>{user.name}</span>
+      </div>
+  );
+
+  const headerRightAction = isScrolled ? (
+      <button onClick={() => setIsBookmarked(!isBookmarked)} className={`ml-2 ${isBookmarked ? 'text-pink-500' : 'text-gray-500'}`}>
+          <BookmarkIcon className="h-6 w-6" />
+      </button>
+  ) : null;
+
+  const headerLeftAction = isScrolled ? (
+      <div className="flex items-center space-x-3 space-x-reverse animate-fade-in">
+          <button onClick={handleSendMessage} className="text-gray-500 hover:text-pink-500">
+              <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
+          </button>
+          <button onClick={() => setIsLiked(!isLiked)} className={`${isLiked ? 'text-pink-500' : 'text-gray-500'}`}>
+              <HeartIcon className="h-6 w-6" />
+          </button>
+      </div>
+  ) : null;
+
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-      <Header title={user.name} showBackButton />
-      <div className="flex-grow overflow-y-auto">
+      <Header 
+        title={headerTitle} 
+        showBackButton={true} // Always show back button
+        leftAction={headerLeftAction}
+        // We append the bookmark to the right side (next to back button) when scrolled
+        rightAction={headerRightAction ? <div className="flex items-center gap-2">{headerRightAction}</div> : undefined}
+      />
+
+      <div 
+        className="flex-grow overflow-y-auto relative" 
+        ref={scrollRef} 
+        onScroll={handleScroll}
+      >
         <div className="relative">
           <img 
             src={user.photo} 
             alt={user.name} 
-            className="w-full h-80 object-cover cursor-pointer" 
+            className="w-full h-96 object-cover cursor-pointer" 
             onClick={() => handleGalleryClick(user.photo)}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none"></div>
+          
+          {/* Overlay Icons (Visible when NOT scrolled) */}
+          <div className={`absolute top-4 left-4 flex flex-col gap-3 transition-opacity duration-300 ${isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+               <button onClick={handleSendMessage} className="bg-black/30 backdrop-blur-md p-2 rounded-full text-white hover:bg-pink-500 transition-colors">
+                  <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
+               </button>
+               <button onClick={() => setIsLiked(!isLiked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-white' : 'text-white hover:bg-pink-500'}`}>
+                  <HeartIcon className="h-6 w-6" />
+               </button>
+          </div>
+
+          <div className={`absolute top-4 right-4 flex flex-col gap-3 transition-opacity duration-300 ${isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+               <button onClick={handleReport} className="bg-black/30 backdrop-blur-md p-2 rounded-full text-white hover:text-red-500 transition-colors">
+                  <FlagIcon className="h-6 w-6" />
+               </button>
+               <button onClick={() => setIsBookmarked(!isBookmarked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isBookmarked ? 'text-pink-500 bg-white' : 'text-white hover:text-pink-500'}`}>
+                  <BookmarkIcon className="h-6 w-6" />
+               </button>
+          </div>
+
           <div className="absolute bottom-0 right-0 p-6 text-right w-full pointer-events-none">
-            <h1 className="text-3xl font-bold text-white">{user.name}، {user.age}</h1>
-            <p className="text-gray-200">{user.occupation} • {user.location}</p>
+            <h1 className="text-3xl font-bold text-white drop-shadow-md">{user.name}، {user.age}</h1>
+            <p className="text-gray-200 drop-shadow-md">{user.occupation} • {user.location}</p>
           </div>
         </div>
         
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-[500px] rounded-t-3xl -mt-4 relative z-10">
           <ProfileSection title="درباره من">
             <p>{user.bio}</p>
           </ProfileSection>
@@ -112,20 +193,14 @@ const UserProfilePage: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex-none sticky bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 p-4 flex justify-around items-center">
-        <ActionButton icon={FlagIcon} onClick={handleReport} label="گزارش" />
-        <ActionButton icon={BookmarkIcon} onClick={() => setIsBookmarked(!isBookmarked)} active={isBookmarked} label="نشان کردن" />
-        <button onClick={handleSendMessage} className="p-4 rounded-full bg-white dark:bg-gray-700 text-pink-500 shadow-lg transform hover:scale-110 transition-transform">
-          <ChatBubbleOvalLeftEllipsisIcon className="h-8 w-8" />
-        </button>
-        <ActionButton icon={HeartIcon} onClick={() => setIsLiked(!isLiked)} active={isLiked} label="لایک" />
-      </div>
-      
       {showPremiumModal && (
           <PremiumModal onClose={() => setShowPremiumModal(false)} message={premiumMessage} />
       )}
       {lightboxImage && (
           <ImageLightbox imageUrl={lightboxImage} onClose={() => setLightboxImage(null)} />
+      )}
+      {viewingStory && (
+          <StoryViewer user={user} onClose={() => setViewingStory(false)} />
       )}
     </div>
   );
@@ -144,16 +219,5 @@ const DetailItem: React.FC<{ label: string; value: string }> = ({ label, value }
     <p className="font-semibold">{value}</p>
   </div>
 );
-
-const ActionButton: React.FC<{ icon: React.ElementType, onClick: () => void, active?: boolean, label: string }> = ({ icon, onClick, active, label }) => {
-    const Icon = icon;
-    return (
-        <button onClick={onClick} className={`flex flex-col items-center space-y-1 transition-colors ${active ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'}`}>
-            <Icon className="h-7 w-7" />
-            <span className="text-xs">{label}</span>
-        </button>
-    );
-};
-
 
 export default UserProfilePage;

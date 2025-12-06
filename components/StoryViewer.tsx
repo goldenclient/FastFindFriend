@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User } from '../types';
 import { XMarkIcon } from './Icon';
 
@@ -9,11 +10,18 @@ interface StoryViewerProps {
 }
 
 const StoryViewer: React.FC<StoryViewerProps> = ({ user, onClose }) => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     // Auto close after 5 seconds (simulation of story duration)
     const timer = setTimeout(onClose, 5000);
     return () => clearTimeout(timer);
   }, [onClose]);
+
+  const handleProfileClick = () => {
+      onClose();
+      navigate(`/user/${user.id}`);
+  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-fade-in">
@@ -21,7 +29,10 @@ const StoryViewer: React.FC<StoryViewerProps> = ({ user, onClose }) => {
             <div className="h-full bg-white animate-progress-bar origin-right"></div>
         </div>
 
-        <div className="absolute top-4 right-4 z-20 flex items-center space-x-2 space-x-reverse">
+        <div 
+            className="absolute top-4 right-4 z-20 flex items-center space-x-2 space-x-reverse cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={handleProfileClick}
+        >
             <img src={user.photo} alt={user.name} className="w-10 h-10 rounded-full border border-white" />
             <span className="text-white font-bold text-shadow">{user.name}</span>
         </div>
