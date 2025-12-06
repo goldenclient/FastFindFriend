@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, PlusIcon, TrashIcon, CameraIcon, EyeSlashIcon, CogIcon, PencilSquareIcon, ShoppingBagIcon } from '../components/Icon';
 import PremiumModal from '../components/PremiumModal';
 import ImageLightbox from '../components/ImageLightbox';
+import StoryViewer from '../components/StoryViewer';
 
 const MyProfilePage: React.FC = () => {
   const { currentUser, logout, updateUser } = useAuth();
@@ -13,10 +14,20 @@ const MyProfilePage: React.FC = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState('');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [viewingStory, setViewingStory] = useState(false);
 
   if (!currentUser) {
     return null;
   }
+
+  const handleScroll = () => {
+      if (scrollRef.current) {
+          const scrollTop = scrollRef.current.scrollTop;
+          setIsScrolled(scrollTop > 200);
+      }
+  };
 
   const handleLogout = () => {
     logout();
@@ -28,6 +39,14 @@ const MyProfilePage: React.FC = () => {
           const file = e.target.files[0];
           const imageUrl = URL.createObjectURL(file);
           updateUser({ photo: imageUrl });
+      }
+  };
+
+  const handleStoryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const imageUrl = URL.createObjectURL(file);
+          updateUser({ story: imageUrl });
       }
   };
 
@@ -85,10 +104,29 @@ const MyProfilePage: React.FC = () => {
   const galleryLimit = currentUser.isPremium ? 6 : 2;
   const displayGallery = (currentUser.gallery || []).slice(0, galleryLimit);
 
+  // Header Title Component
+  const headerTitle = (
+      <div className="flex items-center gap-3 transition-all duration-300">
+          {isScrolled && (
+            <label className="relative w-10 h-10 rounded-full overflow-hidden cursor-pointer group">
+                <div className={`w-full h-full p-[2px] ${currentUser.story ? 'bg-gradient-to-tr from-yellow-400 to-pink-600' : 'bg-gray-200'}`}>
+                    <img src={currentUser.photo} alt={currentUser.name} className="w-full h-full rounded-full object-cover bg-white" />
+                </div>
+                {/* Plus icon on hover or always small indicator to upload story */}
+                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <PlusIcon className="w-4 h-4 text-white" />
+                 </div>
+                 <input type="file" className="hidden" accept="image/*" onChange={handleStoryUpload} />
+            </label>
+          )}
+          <span className="text-lg font-bold">{isScrolled ? currentUser.name : 'پروفایل من'}</span>
+      </div>
+  );
+
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header 
-        title="پروفایل من" 
+        title={headerTitle} 
         isGhostMode={currentUser?.isGhostMode}
         rightAction={
             <Link to="/edit-profile" className={`p-2 ${currentUser?.isGhostMode ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'} hover:text-pink-500`}>
@@ -101,12 +139,16 @@ const MyProfilePage: React.FC = () => {
                 className={`flex items-center p-2 rounded-full transition-colors ${currentUser.isGhostMode ? 'bg-white text-gray-800' : 'text-gray-600 dark:text-gray-300 hover:text-pink-500'}`}
                 title="حالت روح"
             >
-                {currentUser.isGhostMode && <span className="text-xs font-bold ml-2">حالت روح فعال</span>}
+                <span className="text-sm font-bold ml-2">حالت روح</span>
                 <EyeSlashIcon className="h-6 w-6" />
             </button>
         }
       />
-      <div className="flex-grow overflow-y-auto pb-4">
+      <div 
+        className="flex-grow overflow-y-auto pb-4" 
+        ref={scrollRef} 
+        onScroll={handleScroll}
+      >
           <div className="p-6 text-center">
             <div className="relative inline-block">
                 <img 
@@ -203,6 +245,9 @@ const MyProfilePage: React.FC = () => {
       )}
       {lightboxImage && (
           <ImageLightbox imageUrl={lightboxImage} onClose={() => setLightboxImage(null)} />
+      )}
+      {viewingStory && (
+          <StoryViewer user={currentUser} onClose={() => setViewingStory(false)} />
       )}
     </div>
   );

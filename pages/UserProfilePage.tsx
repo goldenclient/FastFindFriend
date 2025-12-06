@@ -35,7 +35,6 @@ const UserProfilePage: React.FC = () => {
 
   const handleScroll = () => {
       if (scrollRef.current) {
-          // Change state when scrolled past the main image (approx 250px)
           const scrollTop = scrollRef.current.scrollTop;
           setIsScrolled(scrollTop > 250);
       }
@@ -60,7 +59,7 @@ const UserProfilePage: React.FC = () => {
       }
   };
 
-  const handleHeaderAvatarClick = () => {
+  const handleStoryClick = () => {
       if (user?.story) {
           setViewingStory(true);
       }
@@ -72,25 +71,27 @@ const UserProfilePage: React.FC = () => {
 
   // Header Props Logic
   const headerTitle = (
-      <div className="flex items-center gap-2 transition-all duration-300">
+      <div className="flex items-center gap-3 transition-all duration-300">
           {isScrolled && (
               <div 
-                onClick={handleHeaderAvatarClick}
-                className={`relative w-8 h-8 rounded-full overflow-hidden cursor-pointer ${user.story ? 'ring-2 ring-pink-500' : ''}`}
+                onClick={handleStoryClick}
+                className={`relative w-10 h-10 rounded-full overflow-hidden cursor-pointer ${user.story ? 'ring-2 ring-pink-500' : ''}`}
               >
                   <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
               </div>
           )}
-          <span>{user.name}</span>
+          <span className="text-lg font-bold">{user.name}</span>
       </div>
   );
 
+  // When scrolled, show Bookmark next to back button (Right Action)
   const headerRightAction = isScrolled ? (
       <button onClick={() => setIsBookmarked(!isBookmarked)} className={`ml-2 ${isBookmarked ? 'text-pink-500' : 'text-gray-500'}`}>
           <BookmarkIcon className="h-6 w-6" />
       </button>
   ) : null;
 
+  // When scrolled, show Message and Like on the Left
   const headerLeftAction = isScrolled ? (
       <div className="flex items-center space-x-3 space-x-reverse animate-fade-in">
           <button onClick={handleSendMessage} className="text-gray-500 hover:text-pink-500">
@@ -106,9 +107,8 @@ const UserProfilePage: React.FC = () => {
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <Header 
         title={headerTitle} 
-        showBackButton={true} // Always show back button
+        showBackButton={true} 
         leftAction={headerLeftAction}
-        // We append the bookmark to the right side (next to back button) when scrolled
         rightAction={headerRightAction ? <div className="flex items-center gap-2">{headerRightAction}</div> : undefined}
       />
 
@@ -126,24 +126,33 @@ const UserProfilePage: React.FC = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none"></div>
           
-          {/* Overlay Icons (Visible when NOT scrolled) */}
+          {/* Left Overlay Icons (Stacked Vertically) */}
           <div className={`absolute top-4 left-4 flex flex-col gap-3 transition-opacity duration-300 ${isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-               <button onClick={handleSendMessage} className="bg-black/30 backdrop-blur-md p-2 rounded-full text-white hover:bg-pink-500 transition-colors">
+               <button onClick={handleSendMessage} className="bg-black/30 backdrop-blur-md p-2 rounded-full text-white hover:bg-pink-500 transition-colors" title="پیام">
                   <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
                </button>
-               <button onClick={() => setIsLiked(!isLiked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-white' : 'text-white hover:bg-pink-500'}`}>
+               <button onClick={() => setIsLiked(!isLiked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-white' : 'text-white hover:bg-pink-500'}`} title="لایک">
                   <HeartIcon className="h-6 w-6" />
+               </button>
+               <button onClick={() => setIsBookmarked(!isBookmarked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isBookmarked ? 'text-pink-500 bg-white' : 'text-white hover:text-pink-500'}`} title="نشان کردن">
+                  <BookmarkIcon className="h-6 w-6" />
+               </button>
+               <button onClick={handleReport} className="bg-black/30 backdrop-blur-md p-2 rounded-full text-white hover:text-red-500 transition-colors" title="گزارش خطا">
+                  <FlagIcon className="h-6 w-6" />
                </button>
           </div>
 
-          <div className={`absolute top-4 right-4 flex flex-col gap-3 transition-opacity duration-300 ${isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-               <button onClick={handleReport} className="bg-black/30 backdrop-blur-md p-2 rounded-full text-white hover:text-red-500 transition-colors">
-                  <FlagIcon className="h-6 w-6" />
-               </button>
-               <button onClick={() => setIsBookmarked(!isBookmarked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isBookmarked ? 'text-pink-500 bg-white' : 'text-white hover:text-pink-500'}`}>
-                  <BookmarkIcon className="h-6 w-6" />
-               </button>
-          </div>
+          {/* Right Overlay Story Avatar */}
+          {user.story && (
+              <div 
+                className={`absolute top-4 right-4 transition-opacity duration-300 ${isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                onClick={handleStoryClick}
+              >
+                  <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 to-pink-600 cursor-pointer shadow-lg">
+                      <img src={user.photo} alt="Story" className="w-full h-full rounded-full object-cover border-2 border-white" />
+                  </div>
+              </div>
+          )}
 
           <div className="absolute bottom-0 right-0 p-6 text-right w-full pointer-events-none">
             <h1 className="text-3xl font-bold text-white drop-shadow-md">{user.name}، {user.age}</h1>
