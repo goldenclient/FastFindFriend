@@ -12,6 +12,7 @@ const RegisterPage: React.FC = () => {
     const [otp, setOtp] = useState('');
     const [otpSent, setOtpSent] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [userId, setUserId] = useState<string>('');
 
     const [formData, setFormData] = useState<Partial<User>>({
         name: '',
@@ -65,11 +66,23 @@ const RegisterPage: React.FC = () => {
         if (otp.length === 4) {
             setLoading(true);
             try {
-                // Assuming verify-otp returns a token even if profile incomplete, or use a temp token
-                // For simplified flow, we verify OTP, get a token, then next steps are Profile Updates.
-                const response: any = await api.post('/auth/verify-otp', { mobile, otpCode: otp });
-                api.setToken(response.token);
-                setStep(1);
+                interface VerifyResponse {
+                    Token?: string;
+                    token?: string;
+                    UserId?: string;
+                    userId?: string;
+                }
+                const response = await api.post<VerifyResponse>('/auth/verify-otp', { mobile, otpCode: otp });
+                const token = response.Token || response.token;
+                const uid = response.UserId || response.userId;
+
+                if (token && uid) {
+                    api.setToken(token);
+                    setUserId(uid);
+                    setStep(1);
+                } else {
+                    throw new Error("Token missing");
+                }
             } catch (e) {
                 alert('کد تایید صحیح نیست.');
             } finally {
@@ -88,9 +101,11 @@ const RegisterPage: React.FC = () => {
             await api.put('/users/profile', formData);
             
             // Fetch full user and login
-            const fullUser = await api.get<User>('/users/profile');
+            // We use the userId captured during OTP verification
+            const fullUser = await api.get<User>(`/users/${userId}`);
             const token = api.getToken();
-            if (token) {
+            
+            if (token && fullUser) {
                  login(token, fullUser);
                  alert('ثبت نام با موفقیت انجام شد!');
                  navigate('/');

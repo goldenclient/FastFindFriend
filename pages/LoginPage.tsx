@@ -39,17 +39,39 @@ const LoginPage: React.FC = () => {
             setLoading(true);
             try {
                 // Call API to verify OTP
-                interface LoginResponse {
-                    token: string;
-                    user: User;
+                // Backend returns: { Token: "...", UserId: "..." }
+                interface VerifyResponse {
+                    Token?: string;
+                    token?: string;
+                    UserId?: string;
+                    userId?: string;
                 }
-                const response = await api.post<LoginResponse>('/auth/verify-otp', { mobile, otpCode: otp });
                 
-                login(response.token, response.user);
+                const response = await api.post<VerifyResponse>('/auth/verify-otp', { mobile, otpCode: otp });
+                
+                // Handle both PascalCase (C# default for anonymous objects) and camelCase (ASP.NET Core default JSON serialization)
+                const token = response.Token || response.token;
+                const userId = response.UserId || response.userId;
+
+                if (!token || !userId) {
+                    throw new Error('پاسخ نامعتبر از سرور دریافت شد.');
+                }
+
+                // 1. Set token immediately to enable authenticated requests
+                api.setToken(token);
+
+                // 2. Fetch full user profile using the UserId
+                // We need the full user object to populate the AuthContext
+                const userProfile = await api.get<User>(`/users/${userId}`);
+                
+                // 3. Login and update context
+                login(token, userProfile);
                 navigate('/');
             } catch (error) {
-                alert('کد تایید نادرست است.');
+                alert('کد تایید نادرست است یا خطایی رخ داده است.');
                 console.error(error);
+                // If fetching profile fails, we should clear the token
+                api.removeToken();
             } finally {
                 setLoading(false);
             }
