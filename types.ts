@@ -22,6 +22,11 @@ export interface UserSettings {
   profileViewNotification: boolean;
 }
 
+export interface UserGalleryImage {
+    id: string;
+    imageUrl: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -38,7 +43,8 @@ export interface User {
   partnerPreferences: string;
   isOnline: boolean;
   distance: number; // in km
-  gallery?: string[]; // List of photo URLs
+  gallery?: string[]; // List of photo URLs (Frontend friendly)
+  galleryImages?: UserGalleryImage[]; // From Backend
   story?: string; // URL to story image
   isPremium?: boolean;
   isGhostMode?: boolean;

@@ -13,6 +13,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to parse JWT
+const parseJwt = (token: string) => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,9 +36,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const token = api.getToken();
       if (token) {
         try {
-          // Fetch current user profile using the token
-          const user = await api.get<User>('/users/profile');
-          setCurrentUser(user);
+          const payload = parseJwt(token);
+          // Look for common User ID claims
+          // http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier is 'nameid' usually
+          const userId = payload?.nameid || payload?.sub || payload?.UserId || payload?.id;
+
+          if (userId) {
+              // Fetch current user profile using the ID from token
+              const user = await api.get<User>(`/users/${userId}`);
+              
+               // Map backend data to frontend
+              if (user.galleryImages && !user.gallery) {
+                user.gallery = user.galleryImages.map(img => img.imageUrl);
+              }
+              
+              setCurrentUser(user);
+          } else {
+              throw new Error("Invalid Token: No User ID");
+          }
         } catch (error) {
           console.error('Failed to fetch user profile', error);
           api.removeToken();

@@ -37,9 +37,11 @@ const LoginPage: React.FC = () => {
         
         if (otp.length === 4) {
             setLoading(true);
+            let verifiedToken = '';
+            let verifiedUserId = '';
+
+            // Step 1: Verify OTP
             try {
-                // Call API to verify OTP
-                // Backend returns: { Token: "...", UserId: "..." }
                 interface VerifyResponse {
                     Token?: string;
                     token?: string;
@@ -49,7 +51,7 @@ const LoginPage: React.FC = () => {
                 
                 const response = await api.post<VerifyResponse>('/auth/verify-otp', { mobile, otpCode: otp });
                 
-                // Handle both PascalCase (C# default for anonymous objects) and camelCase (ASP.NET Core default JSON serialization)
+                // Handle both PascalCase and camelCase
                 const token = response.Token || response.token;
                 const userId = response.UserId || response.userId;
 
@@ -57,20 +59,36 @@ const LoginPage: React.FC = () => {
                     throw new Error('پاسخ نامعتبر از سرور دریافت شد.');
                 }
 
-                // 1. Set token immediately to enable authenticated requests
+                verifiedToken = token;
+                verifiedUserId = userId;
                 api.setToken(token);
 
-                // 2. Fetch full user profile using the UserId
+            } catch (error) {
+                console.error("OTP Verification Error:", error);
+                alert('کد تایید نادرست است یا خطایی در سرور رخ داده است.');
+                setLoading(false);
+                return;
+            }
+
+            // Step 2: Fetch Profile
+            try {
                 // We need the full user object to populate the AuthContext
-                const userProfile = await api.get<User>(`/users/${userId}`);
+                const userProfileData = await api.get<User>(`/users/${verifiedUserId}`);
                 
+                // MAP BACKEND DATA TO FRONTEND MODEL
+                // Backend returns galleryImages (objects), Frontend uses gallery (strings)
+                if (userProfileData.galleryImages && !userProfileData.gallery) {
+                    userProfileData.gallery = userProfileData.galleryImages.map(img => img.imageUrl);
+                }
+
                 // 3. Login and update context
-                login(token, userProfile);
+                login(verifiedToken, userProfileData);
                 navigate('/');
             } catch (error) {
-                alert('کد تایید نادرست است یا خطایی رخ داده است.');
-                console.error(error);
-                // If fetching profile fails, we should clear the token
+                console.error("Profile Fetch Error:", error);
+                alert('ورود موفقیت‌آمیز بود اما دریافت پروفایل با خطا مواجه شد. لطفاً اتصال بک‌اند را بررسی کنید.');
+                // We don't remove token immediately here to allow debugging if needed, 
+                // but strictly speaking we should:
                 api.removeToken();
             } finally {
                 setLoading(false);

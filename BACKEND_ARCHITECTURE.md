@@ -1,123 +1,127 @@
+# مستندات کامل بک‌اند (ASP.NET Core 8)
 
-# مستندات معماری بک‌اند (ASP.NET Core + SQL Server)
-
-این سند شامل طراحی دیتابیس، مدل‌های انتیتی فریم‌ورک و لیست API‌های مورد نیاز برای اتصال فرانت‌اند پروژه "3F App" به بک‌اند است.
+این فایل شامل تمام کدهای مورد نیاز برای راه‌اندازی بک‌اند است. مشکل "خطا در خواندن users/{id}" معمولاً به دلیل **چرخه بی‌پایان JSON (Circular Reference)** رخ می‌دهد. در کدهای زیر با استفاده از `[JsonIgnore]` و تنظیمات `Program.cs` این مشکل رفع شده است.
 
 ---
 
-## 1. طراحی دیتابیس (SQL Server Scripts)
+## 1. تنظیمات اصلی (Program.cs)
 
-این اسکریپت‌ها جداول مورد نیاز را بر اساس `types.ts` موجود در فرانت‌اند می‌سازند.
+این بخش حیاتی است. خط `ReferenceHandler.IgnoreCycles` باعث می‌شود که اگر در دیتابیس رابطه‌های دوطرفه (User -> Image -> User) وجود داشت، برنامه کرش نکند.
 
-```sql
--- ایجاد دیتابیس
-CREATE DATABASE FastFindFriendDB;
-GO
-USE FastFindFriendDB;
-GO
+```csharp
+using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using FFF.Backend.Data;
 
--- جدول کاربران
-CREATE TABLE Users (
-    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    Name NVARCHAR(100) NOT NULL,
-    Mobile NVARCHAR(15) NOT NULL UNIQUE, -- برای لاگین
-    OtpCode NVARCHAR(6) NULL, -- کد تایید موقت
-    OtpExpiry DATETIME NULL,
-    Age INT NOT NULL,
-    Gender NVARCHAR(20) NOT NULL, -- Enum: Male, Female, Other
-    Location NVARCHAR(200) NOT NULL,
-    Occupation NVARCHAR(100) NULL,
-    Bio NVARCHAR(MAX) NULL,
-    PhotoUrl NVARCHAR(MAX) NULL, -- عکس پروفایل اصلی
-    MaritalStatus NVARCHAR(50) NOT NULL,
-    Height INT NOT NULL, -- cm
-    Weight INT NOT NULL, -- kg
-    FavoriteSport NVARCHAR(100) NULL,
-    PartnerPreferences NVARCHAR(MAX) NULL,
-    IsOnline BIT DEFAULT 0,
-    LastActive DATETIME DEFAULT GETDATE(),
-    Latitude FLOAT NULL, -- برای محاسبه فاصله
-    Longitude FLOAT NULL, -- برای محاسبه فاصله
-    IsPremium BIT DEFAULT 0,
-    IsGhostMode BIT DEFAULT 0,
-    StoryUrl NVARCHAR(MAX) NULL,
-    StoryCreatedAt DATETIME NULL,
-    CreatedAt DATETIME DEFAULT GETDATE()
-);
+var builder = WebApplication.CreateBuilder(args);
 
--- تنظیمات کاربر (یک به یک با Users)
-CREATE TABLE UserSettings (
-    UserId UNIQUEIDENTIFIER PRIMARY KEY REFERENCES Users(Id),
-    NewLikeNotification BIT DEFAULT 1,
-    NewMessageNotification BIT DEFAULT 1,
-    BiometricLogin BIT DEFAULT 0,
-    ProfileViewNotification BIT DEFAULT 1
-);
+// 1. Database Context
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
--- گالری تصاویر کاربر (یک به چند)
-CREATE TABLE UserGalleryImages (
-    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    UserId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    ImageUrl NVARCHAR(MAX) NOT NULL,
-    CreatedAt DATETIME DEFAULT GETDATE()
-);
+// 2. Add Controllers with JSON Cycle Fix
+builder.Services.AddControllers().AddJsonOptions(x =>
+    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
--- پیام‌ها (چت)
-CREATE TABLE Messages (
-    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    SenderId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    ReceiverId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    Text NVARCHAR(MAX) NULL,
-    ImageUrl NVARCHAR(MAX) NULL,
-    IsRead BIT DEFAULT 0,
-    Timestamp DATETIME DEFAULT GETDATE()
-);
+// 3. CORS Policy (Allow Frontend)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        b => b.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+});
 
--- لایک‌ها (برای مچ شدن)
-CREATE TABLE UserLikes (
-    LikerId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    LikeeId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    PRIMARY KEY (LikerId, LikeeId)
-);
+// 4. JWT Authentication
+var key = Encoding.ASCII.GetBytes("THIS_IS_A_VERY_LONG_SECRET_KEY_FOR_JWT_SECURITY_AT_LEAST_32_CHARS");
+builder.Services.AddAuthentication(x =>
+{
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(x =>
+{
+    x.RequireHttpsMetadata = false;
+    x.SaveToken = true;
+    x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
 
--- بلاک لیست
-CREATE TABLE UserBlocks (
-    BlockerId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    BlockedId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    PRIMARY KEY (BlockerId, BlockedId)
-);
+var app = builder.Build();
 
--- بازدیدکنندگان (برای بخش چه کسی پروفایل من را دیده است)
-CREATE TABLE ProfileVisits (
-    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    VisitorId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    VisitedId UNIQUEIDENTIFIER NOT NULL REFERENCES Users(Id),
-    VisitDate DATETIME DEFAULT GETDATE()
-);
+// Middleware Pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
 
--- محصولات (اشتراک‌ها و ...)
-CREATE TABLE Products (
-    Id NVARCHAR(50) PRIMARY KEY, -- مثل 'prod_premium'
-    Name NVARCHAR(100) NOT NULL,
-    Type NVARCHAR(50) NOT NULL, -- Subscription, Badge, Boost
-    Description NVARCHAR(MAX) NOT NULL,
-    Price DECIMAL(18, 2) NOT NULL
-);
+app.UseCors("AllowReactApp");
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
 ```
 
 ---
 
-## 2. مدل‌های C# (Entity Framework Core)
-
-این کلاس‌ها را در پوشه `Models` یا `Entities` پروژه ASP.NET Core خود ایجاد کنید.
+## 2. دیتابیس کانتکست (Data/AppDbContext.cs)
 
 ```csharp
-using System;
-using System.Collections.Generic;
+using FFF.Backend.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace FFF.Backend.Data
+{
+    public class AppDbContext : DbContext
+    {
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+        public DbSet<User> Users { get; set; }
+        public DbSet<UserGalleryImage> UserGalleryImages { get; set; }
+        public DbSet<UserSettings> UserSettings { get; set; }
+        public DbSet<Message> Messages { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // تنظیم رابطه یک به یک برای Settings
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Settings)
+                .WithOne(s => s.User)
+                .HasForeignKey<UserSettings>(s => s.UserId);
+                
+            // جلوگیری از خطای Multiple Cascade Paths در SQL Server برای مسیج‌ها
+            modelBuilder.Entity<Message>()
+                .HasOne(m => m.Sender)
+                .WithMany(u => u.SentMessages)
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Message>()
+                .HasOne(m => m.Receiver)
+                .WithMany(u => u.ReceivedMessages)
+                .HasForeignKey(m => m.ReceiverId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+    }
+}
+```
+
+---
+
+## 3. مدل‌ها (Models)
+
+به ویژگی **`[JsonIgnore]`** در کلاس‌های فرزند دقت کنید. این ویژگی جلوی خطا را می‌گیرد.
+
+```csharp
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace FFF.Backend.Models
 {
@@ -125,76 +129,76 @@ namespace FFF.Backend.Models
     {
         [Key]
         public Guid Id { get; set; }
-        
-        [Required]
-        [MaxLength(15)]
-        public string Mobile { get; set; } // Username
-        
-        public string Name { get; set; }
+        [Required, MaxLength(15)]
+        public string Mobile { get; set; }
+        public string? Name { get; set; }
         public int Age { get; set; }
-        public string Gender { get; set; } // Consider using Enum
-        public string Location { get; set; }
-        public string Occupation { get; set; }
-        public string Bio { get; set; }
-        public string PhotoUrl { get; set; }
-        public string MaritalStatus { get; set; }
+        public string? Gender { get; set; }
+        public string? Location { get; set; }
+        public string? Occupation { get; set; }
+        public string? Bio { get; set; }
+        public string? PhotoUrl { get; set; }
+        public string? StoryUrl { get; set; }
+        public string? MaritalStatus { get; set; }
         public int Height { get; set; }
         public int Weight { get; set; }
-        public string FavoriteSport { get; set; }
-        public string PartnerPreferences { get; set; }
-        
+        public string? FavoriteSport { get; set; }
+        public string? PartnerPreferences { get; set; }
         public bool IsOnline { get; set; }
         public DateTime LastActive { get; set; }
-        
-        // Geo-location for distance calculation
-        public double? Latitude { get; set; }
-        public double? Longitude { get; set; }
-
         public bool IsPremium { get; set; }
         public bool IsGhostMode { get; set; }
 
-        public string StoryUrl { get; set; }
-        public DateTime? StoryCreatedAt { get; set; }
+        // OTP Fields
+        public string? OtpCode { get; set; }
+        public DateTime? OtpExpiry { get; set; }
 
-        // Navigation Properties
-        public UserSettings Settings { get; set; }
-        public ICollection<UserGalleryImage> GalleryImages { get; set; }
-        public ICollection<Message> SentMessages { get; set; }
-        public ICollection<Message> ReceivedMessages { get; set; }
+        public UserSettings? Settings { get; set; }
+        public ICollection<UserGalleryImage>? GalleryImages { get; set; }
+
+        [JsonIgnore]
+        public ICollection<Message>? SentMessages { get; set; }
+        [JsonIgnore]
+        public ICollection<Message>? ReceivedMessages { get; set; }
+    }
+
+    public class UserGalleryImage
+    {
+        [Key]
+        public Guid Id { get; set; }
+        public Guid UserId { get; set; }
+        public string ImageUrl { get; set; }
+
+        [JsonIgnore] // <<--- این خط بسیار مهم است
+        public User User { get; set; }
     }
 
     public class UserSettings
     {
-        [Key, ForeignKey("User")]
+        [Key]
         public Guid UserId { get; set; }
         public bool NewLikeNotification { get; set; }
         public bool NewMessageNotification { get; set; }
         public bool BiometricLogin { get; set; }
         public bool ProfileViewNotification { get; set; }
-        
+
+        [JsonIgnore] // <<--- جلوگیری از چرخه
         public User User { get; set; }
     }
-
-    public class UserGalleryImage
-    {
-        public Guid Id { get; set; }
-        public Guid UserId { get; set; }
-        public string ImageUrl { get; set; }
-        
-        public User User { get; set; }
-    }
-
+    
     public class Message
     {
+        [Key]
         public Guid Id { get; set; }
         public Guid SenderId { get; set; }
         public Guid ReceiverId { get; set; }
-        public string Text { get; set; }
-        public string ImageUrl { get; set; }
+        public string? Text { get; set; }
+        public string? ImageUrl { get; set; }
         public DateTime Timestamp { get; set; }
-        public bool IsRead { get; set; }
-
+        
+        [JsonIgnore]
         public User Sender { get; set; }
+        [JsonIgnore]
         public User Receiver { get; set; }
     }
 }
@@ -202,48 +206,211 @@ namespace FFF.Backend.Models
 
 ---
 
-## 3. طراحی API (Controllers)
+## 4. کنترلرها (Controllers)
 
-در پروژه ASP.NET Core، کنترلرها را بر اساس این ساختار ایجاد کنید تا فرانت‌اند بتواند به راحتی متصل شود.
+### UsersController.cs
+این همان کنترلری است که شما با آن مشکل داشتید. با کدهای بالا و `Include` زیر، مشکل حل می‌شود.
 
-### `AuthController.cs`
-مدیریت ورود و ثبت نام با شماره موبایل.
+```csharp
+using FFF.Backend.Data;
+using FFF.Backend.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-*   `POST /api/auth/send-otp`: دریافت شماره موبایل و ارسال پیامک.
-*   `POST /api/auth/verify-otp`: دریافت کد تایید و برگرداندن JWT Token.
+namespace FFF.Backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UsersController : ControllerBase
+    {
+        private readonly AppDbContext _context;
 
-### `UsersController.cs`
-مدیریت پروفایل‌ها و جستجو.
+        public UsersController(AppDbContext context)
+        {
+            _context = context;
+        }
 
-*   `GET /api/users`: لیست کاربران (صفحه اصلی) با قابلیت فیلتر (Age, Gender, Distance).
-    *   *نکته:* برای فیلتر `distance` در SQL Server می‌توانید از تابع `GEOGRAPHY` استفاده کنید یا در C# محاسبه کنید.
-*   `GET /api/users/{id}`: جزئیات پروفایل یک کاربر.
-*   `PUT /api/users/profile`: ویرایش پروفایل کاربر جاری.
-*   `POST /api/users/gallery`: آپلود عکس جدید در گالری.
-*   `DELETE /api/users/gallery/{id}`: حذف عکس.
-*   `POST /api/users/story`: آپلود استوری.
+        // GET: api/users/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUserProfile(Guid id)
+        {
+            var user = await _context.Users
+                .Include(u => u.GalleryImages)
+                .Include(u => u.Settings)
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-### `MessagesController.cs` (یا ChatHub با SignalR)
-برای چت، پیشنهاد می‌شود از **SignalR** استفاده کنید تا پیام‌ها بلادرنگ (Real-time) باشند.
+            if (user == null) return NotFound();
+            
+            return Ok(user);
+        }
 
-*   `GET /api/messages/chats`: لیست آخرین مکالمات (ChatListPage).
-*   `GET /api/messages/{userId}`: تاریخچه پیام‌ها با یک کاربر خاص.
-*   `POST /api/messages`: ارسال پیام (اگر از REST استفاده می‌کنید، اما SignalR بهتر است).
+        // PUT: api/users/profile
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] User updatedUser)
+        {
+            // در یک سناریوی واقعی، ID را از توکن می‌گیریم: User.FindFirst("id")?.Value
+            // اینجا برای سادگی فرض می‌کنیم ID در بادی ارسال شده یا مکانیزم دیگری دارد
+            // برای تست: 
+            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+            
+            var id = Guid.Parse(userIdStr);
+            var user = await _context.Users.FindAsync(id);
 
-### `InteractionController.cs`
-مدیریت لایک، بلاک و بازدید.
+            if (user == null) return NotFound();
 
-*   `POST /api/interaction/like/{userId}`: لایک کردن کاربر.
-*   `GET /api/interaction/likes`: لیست کسانی که لایک کرده‌اند (LikesPage).
-*   `POST /api/interaction/block/{userId}`: مسدود کردن.
-*   `GET /api/interaction/visitors`: لیست بازدیدکنندگان (برای کاربران پرمیوم).
+            user.Name = updatedUser.Name ?? user.Name;
+            user.Bio = updatedUser.Bio ?? user.Bio;
+            user.Occupation = updatedUser.Occupation ?? user.Occupation;
+            user.Location = updatedUser.Location ?? user.Location;
+            // ... بروزرسانی سایر فیلدها
+            
+            if (!string.IsNullOrEmpty(updatedUser.PhotoUrl)) user.PhotoUrl = updatedUser.PhotoUrl;
+            if (!string.IsNullOrEmpty(updatedUser.StoryUrl)) user.StoryUrl = updatedUser.StoryUrl;
 
----
+            await _context.SaveChangesAsync();
+            return Ok(user);
+        }
+    }
+}
+```
 
-## 4. نکاتی برای اتصال فرانت‌اند به بک‌اند
+### AuthController.cs
+مسئول ارسال OTP و لاگین.
 
-1.  **CORS:** در `Program.cs` حتماً CORS را فعال کنید تا درخواست‌های فرانت‌اند مسدود نشوند.
-2.  **JWT Authentication:** از Identity و JWT Bearer برای احراز هویت استفاده کنید. توکن دریافتی در `LoginPage` باید در `localStorage` ذخیره شود.
-3.  **SignalR Client:** در فرانت‌اند پکیج `@microsoft/signalr` را نصب کنید تا به ChatHub متصل شوید.
+```csharp
+using FFF.Backend.Data;
+using FFF.Backend.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
-این نقشه راه کامل برای تبدیل این UI به یک اپلیکیشن واقعی است. موفق باشید!
+namespace FFF.Backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+        private const string SECRET_KEY = "THIS_IS_A_VERY_LONG_SECRET_KEY_FOR_JWT_SECURITY_AT_LEAST_32_CHARS";
+
+        public AuthController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpPost("send-otp")]
+        public async Task<IActionResult> SendOtp([FromBody] LoginRequest request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Mobile == request.Mobile);
+            if (user == null)
+            {
+                user = new User 
+                { 
+                    Mobile = request.Mobile,
+                    Name = "کاربر جدید",
+                    Age = 18,
+                    IsPremium = false,
+                    Settings = new UserSettings() // ایجاد تنظیمات پیش‌فرض
+                };
+                _context.Users.Add(user);
+            }
+
+            // تولید کد ۴ رقمی تصادفی
+            var otp = new Random().Next(1000, 9999).ToString();
+            user.OtpCode = otp;
+            user.OtpExpiry = DateTime.UtcNow.AddMinutes(2);
+
+            await _context.SaveChangesAsync();
+
+            // در محیط واقعی، اینجا باید SMS ارسال شود.
+            // برای تست، کد را در کنسول لاگ می‌کنیم یا برمی‌گردانیم (فقط برای دیباگ)
+            return Ok(new { message = "OTP Sent", debugCode = otp });
+        }
+
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp([FromBody] VerifyRequest request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Mobile == request.Mobile);
+
+            if (user == null || user.OtpCode != request.OtpCode)
+            {
+                return BadRequest(new { message = "Invalid OTP" });
+            }
+
+            if (user.OtpExpiry < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "OTP Expired" });
+            }
+
+            // پاک کردن کد مصرف شده
+            user.OtpCode = null;
+            await _context.SaveChangesAsync();
+
+            // تولید توکن
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(SECRET_KEY);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.MobilePhone, user.Mobile)
+                }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
+            return Ok(new { Token = tokenString, UserId = user.Id });
+        }
+    }
+
+    public class LoginRequest { public string Mobile { get; set; } }
+    public class VerifyRequest { public string Mobile { get; set; } public string OtpCode { get; set; } }
+}
+```
+
+### MessagesController.cs
+
+```csharp
+using FFF.Backend.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace FFF.Backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class MessagesController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public MessagesController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> GetMessages(Guid userId)
+        {
+            // دریافت ID کاربر جاری از توکن
+            var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserIdStr)) return Unauthorized();
+            var currentUserId = Guid.Parse(currentUserIdStr);
+
+            var messages = await _context.Messages
+                .Where(m => (m.SenderId == currentUserId && m.ReceiverId == userId) ||
+                            (m.SenderId == userId && m.ReceiverId == currentUserId))
+                .OrderBy(m => m.Timestamp)
+                .ToListAsync();
+
+            return Ok(messages);
+        }
+    }
+}
+```
