@@ -19,7 +19,8 @@ const LoginPage: React.FC = () => {
             setLoading(true);
             try {
                 // Call API to send OTP
-                await api.post('/auth/send-otp', { mobile });
+                const response = await api.post<any>('/auth/send-otp', { mobile });
+                console.log('DEBUG OTP:', response); // Log response to see the OTP code if backend sends it
                 setStep(2);
             } catch (error) {
                 alert('خطا در ارسال کد تایید. لطفاً دوباره تلاش کنید.');
@@ -49,7 +50,8 @@ const LoginPage: React.FC = () => {
                     userId?: string;
                 }
                 
-                const response = await api.post<VerifyResponse>('/auth/verify-otp', { mobile, otpCode: otp });
+                // Send OtpCode (PascalCase) to match Backend Model strictly, though JSON is usually flexible
+                const response = await api.post<VerifyResponse>('/auth/verify-otp', { mobile, OtpCode: otp });
                 
                 // Handle both PascalCase and camelCase
                 const token = response.Token || response.token;
@@ -76,9 +78,19 @@ const LoginPage: React.FC = () => {
                 const userProfileData = await api.get<User>(`/users/${verifiedUserId}`);
                 
                 // MAP BACKEND DATA TO FRONTEND MODEL
-                // Backend returns galleryImages (objects), Frontend uses gallery (strings)
-                if (userProfileData.galleryImages && !userProfileData.gallery) {
+                // 1. Map Gallery
+                if (userProfileData.galleryImages && (!userProfileData.gallery || userProfileData.gallery.length === 0)) {
                     userProfileData.gallery = userProfileData.galleryImages.map(img => img.imageUrl);
+                }
+                
+                // 2. Map PhotoUrl -> photo
+                if (userProfileData.photoUrl && !userProfileData.photo) {
+                    userProfileData.photo = userProfileData.photoUrl;
+                }
+                
+                // 3. Map StoryUrl -> story
+                if (userProfileData.storyUrl && !userProfileData.story) {
+                    userProfileData.story = userProfileData.storyUrl;
                 }
 
                 // 3. Login and update context
@@ -87,8 +99,6 @@ const LoginPage: React.FC = () => {
             } catch (error) {
                 console.error("Profile Fetch Error:", error);
                 alert('ورود موفقیت‌آمیز بود اما دریافت پروفایل با خطا مواجه شد. لطفاً اتصال بک‌اند را بررسی کنید.');
-                // We don't remove token immediately here to allow debugging if needed, 
-                // but strictly speaking we should:
                 api.removeToken();
             } finally {
                 setLoading(false);

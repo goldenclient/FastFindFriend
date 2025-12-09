@@ -36,6 +36,7 @@ export interface User {
   occupation: string;
   bio: string;
   photo: string;
+  photoUrl?: string; // Backend compatibility
   maritalStatus: MaritalStatus;
   height: number; // in cm
   weight: number; // in kg
@@ -46,6 +47,7 @@ export interface User {
   gallery?: string[]; // List of photo URLs (Frontend friendly)
   galleryImages?: UserGalleryImage[]; // From Backend
   story?: string; // URL to story image
+  storyUrl?: string; // Backend compatibility
   isPremium?: boolean;
   isGhostMode?: boolean;
   settings?: UserSettings;

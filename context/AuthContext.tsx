@@ -46,8 +46,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const user = await api.get<User>(`/users/${userId}`);
               
                // Map backend data to frontend
-              if (user.galleryImages && !user.gallery) {
+              if (user.galleryImages && (!user.gallery || user.gallery.length === 0)) {
                 user.gallery = user.galleryImages.map(img => img.imageUrl);
+              }
+              if (user.photoUrl && !user.photo) {
+                  user.photo = user.photoUrl;
+              }
+              if (user.storyUrl && !user.story) {
+                  user.story = user.storyUrl;
               }
               
               setCurrentUser(user);
