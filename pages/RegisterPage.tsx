@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Gender, MaritalStatus, User } from '../types';
@@ -26,7 +26,8 @@ const RegisterPage: React.FC = () => {
         weight: 60,
         favoriteSport: '',
         partnerPreferences: '',
-        age: 25
+        birthDate: '2000-01-01',
+        age: 24
     });
 
     const navigate = useNavigate();
@@ -35,13 +36,31 @@ const RegisterPage: React.FC = () => {
     const nextStep = () => setStep(s => s + 1);
     const prevStep = () => setStep(s => s - 1);
     
+    // Calculate age whenever birthDate changes
+    const calculateAge = (birthDate: string): number => {
+        const today = new Date();
+        const birthDateObj = new Date(birthDate);
+        let age = today.getFullYear() - birthDateObj.getFullYear();
+        const m = today.getMonth() - birthDateObj.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
+            age--;
+        }
+        return age;
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         const inputType = (e.target as HTMLInputElement).type;
-        setFormData(prev => ({
-             ...prev,
-             [name]: inputType === 'number' ? (value === '' ? 0 : parseFloat(value)) : value
-        }));
+        
+        let newValue: any = inputType === 'number' ? (value === '' ? 0 : parseFloat(value)) : value;
+        
+        setFormData(prev => {
+            const updated = { ...prev, [name]: newValue };
+            if (name === 'birthDate') {
+                updated.age = calculateAge(value);
+            }
+            return updated;
+        });
     };
 
     const handleSendCode = async (e: React.FormEvent) => {
@@ -97,8 +116,12 @@ const RegisterPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
+            // Prepare payload for backend (map frontend keys to backend expectations if needed)
+            const payload: any = { ...formData };
+            if (payload.photo) payload.PhotoUrl = payload.photo;
+
             // Update the profile with collected data
-            await api.put('/users/profile', formData);
+            await api.put('/users/profile', payload);
             
             // Fetch full user and login
             // We use the userId captured during OTP verification
@@ -184,6 +207,8 @@ const Step1: React.FC<StepProps> = ({ nextStep, handleChange, formData }) => (
     <form onSubmit={nextStep} className="space-y-4">
         <InputField name="name" label="نام" value={formData.name!} onChange={handleChange} required />
         <SelectField name="gender" label="جنسیت" value={formData.gender!} onChange={handleChange} options={Object.values(Gender)} />
+        <InputField name="birthDate" label="تاریخ تولد" type="date" value={formData.birthDate!} onChange={handleChange} required />
+        <div className="text-sm text-gray-500 text-right">سن محاسبه شده: {formData.age} سال</div>
         <InputField name="location" label="مکان" value={formData.location!} onChange={handleChange} placeholder="مثلاً تهران، ایران" required />
         <InputField name="occupation" label="شغل" value={formData.occupation!} onChange={handleChange} placeholder="مثلاً مهندس نرم‌افزار" required />
         <button type="submit" className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600">بعدی</button>

@@ -13,17 +13,36 @@ const EditProfilePage: React.FC = () => {
 
     useEffect(() => {
         if (currentUser) {
-            setFormData(currentUser);
+            // Ensure birthDate is formatted correctly for date input if it exists
+            const dateStr = currentUser.birthDate ? currentUser.birthDate.split('T')[0] : '';
+            setFormData({ ...currentUser, birthDate: dateStr });
         }
     }, [currentUser]);
+
+    const calculateAge = (birthDate: string): number => {
+        const today = new Date();
+        const birthDateObj = new Date(birthDate);
+        let age = today.getFullYear() - birthDateObj.getFullYear();
+        const m = today.getMonth() - birthDateObj.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
+            age--;
+        }
+        return age;
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         const inputType = (e.target as HTMLInputElement).type;
-        setFormData(prev => ({
-            ...prev,
-            [name]: inputType === 'number' ? (value === '' ? 0 : parseFloat(value)) : value
-        }));
+        
+        let newValue: any = inputType === 'number' ? (value === '' ? 0 : parseFloat(value)) : value;
+
+        setFormData(prev => {
+            const updated = { ...prev, [name]: newValue };
+            if (name === 'birthDate') {
+                updated.age = calculateAge(value);
+            }
+            return updated;
+        });
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -42,6 +61,10 @@ const EditProfilePage: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <InputField name="name" label="نام" value={formData.name || ''} onChange={handleChange} required />
                     <SelectField name="gender" label="جنسیت" value={formData.gender || Gender.Female} onChange={handleChange} options={Object.values(Gender)} />
+                    
+                    <InputField name="birthDate" label="تاریخ تولد" type="date" value={formData.birthDate || ''} onChange={handleChange} required />
+                    <div className="text-sm text-gray-500 text-right">سن: {formData.age} سال</div>
+
                     <InputField name="location" label="مکان" value={formData.location || ''} onChange={handleChange} placeholder="مثلاً تهران، ایران" required />
                     <InputField name="occupation" label="شغل" value={formData.occupation || ''} onChange={handleChange} placeholder="مثلاً مهندس نرم‌افزار" required />
                     <SelectField name="maritalStatus" label="وضعیت تاهل" value={formData.maritalStatus || MaritalStatus.Single} onChange={handleChange} options={Object.values(MaritalStatus)} />
