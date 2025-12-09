@@ -1,16 +1,19 @@
 # مستندات کامل بک‌اند (ASP.NET Core 8)
 
-این فایل شامل تمام کدهای مورد نیاز برای راه‌اندازی بک‌اند است. این کدها شامل رفع مشکل Circular Reference و پیاده‌سازی قابلیت‌های لایک، بلاک و گزارش است.
+این فایل شامل تمام کدهای مورد نیاز برای راه‌اندازی بک‌اند است. مشکل Swagger و خطاهای مربوط به JSON Cycle در این نسخه رفع شده‌اند.
 
 ---
 
 ## 1. تنظیمات اصلی (Program.cs)
+
+**تغییرات مهم:** اضافه شدن `AddSwaggerGen` و `UseSwagger` برای رفع خطای 404 و قابلیت تست API.
 
 ```csharp
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models; // فضای نام جدید برای Swagger
 using System.Text;
 using FFF.Backend.Data;
 
@@ -25,14 +28,49 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers().AddJsonOptions(x =>
     x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
-// 3. CORS Policy (Allow Frontend)
+// 3. Swagger / OpenAPI Configuration (رفع خطای 404)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "FFF Backend API", Version = "v1" });
+
+    // تنظیمات دکمه Authorize (قفل) در Swagger برای تست توکن
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 12345abcdef\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
+
+// 4. CORS Policy (Allow Frontend)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         b => b.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
-// 4. JWT Authentication
+// 5. JWT Authentication
 // کلید باید دقیقاً با کلید داخل AuthController یکسان باشد.
 var key = Encoding.ASCII.GetBytes("THIS_IS_A_VERY_LONG_SECRET_KEY_FOR_JWT_SECURITY_AT_LEAST_32_CHARS");
 builder.Services.AddAuthentication(x =>
@@ -53,7 +91,7 @@ builder.Services.AddAuthentication(x =>
     };
 });
 
-// 5. HttpContext Accessor (برای دسترسی به User ID در سرویس‌ها)
+// 6. HttpContext Accessor (برای دسترسی به User ID در سرویس‌ها)
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -62,11 +100,18 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+    
+    // فعال‌سازی Swagger (این خطوط برای رفع خطای 404 الزامی هستند)
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "FFF Backend API v1"));
 }
 
+app.UseHttpsRedirection(); // معمولاً در لوکال هاست فعال است
 app.UseCors("AllowReactApp");
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
