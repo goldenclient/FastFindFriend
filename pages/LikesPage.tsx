@@ -1,28 +1,51 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from '../types';
-import { MOCK_USERS } from '../data/users';
 import Header from '../components/Header';
 import { Link } from 'react-router-dom';
+import { api } from '../services/api';
 
 const LikesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
+  const [likesReceived, setLikesReceived] = useState<User[]>([]);
+  const [likesSent, setLikesSent] = useState<User[]>([]); // Note: Backend needs to support this
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - in a real app, this would come from an API
-  const likesReceived = MOCK_USERS.slice(0, 3);
-  const likesSent = MOCK_USERS.slice(3, 5);
+  useEffect(() => {
+    const fetchLikes = async () => {
+        setLoading(true);
+        try {
+            // Fetch users who liked me
+            const received = await api.get<User[]>('/interaction/likes');
+            setLikesReceived(received || []);
+            
+            // NOTE: Current backend InteractionController only has /likes (received).
+            // You might need to add /interaction/likes/sent endpoint to support this.
+            // setLikesSent(sent || []);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchLikes();
+  }, []);
 
   const renderUserList = (users: User[]) => (
     <div className="p-4 space-y-3">
-      {users.map(user => (
-        <Link to={`/user/${user.id}`} key={user.id} className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-          <img src={user.photo} alt={user.name} className="w-14 h-14 rounded-full object-cover" />
-          <div className="mr-4">
-            <p className="font-bold text-gray-800 dark:text-white">{user.name}، {user.age}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{user.occupation}</p>
-          </div>
-        </Link>
-      ))}
+      {users.length > 0 ? (
+          users.map(user => (
+            <Link to={`/user/${user.id}`} key={user.id} className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <img src={user.photo || 'https://via.placeholder.com/150'} alt={user.name} className="w-14 h-14 rounded-full object-cover" />
+              <div className="mr-4">
+                <p className="font-bold text-gray-800 dark:text-white">{user.name}، {user.age}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{user.occupation}</p>
+              </div>
+            </Link>
+          ))
+      ) : (
+          <div className="text-center py-10 text-gray-500">لیست خالی است.</div>
+      )}
     </div>
   );
 
@@ -46,7 +69,11 @@ const LikesPage: React.FC = () => {
         </div>
       </div>
       <div className="flex-grow overflow-y-auto">
-        {activeTab === 'received' ? renderUserList(likesReceived) : renderUserList(likesSent)}
+        {loading ? (
+            <div className="text-center py-10">در حال دریافت...</div>
+        ) : (
+            activeTab === 'received' ? renderUserList(likesReceived) : renderUserList(likesSent)
+        )}
       </div>
     </div>
   );

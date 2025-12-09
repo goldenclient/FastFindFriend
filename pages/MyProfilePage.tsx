@@ -9,6 +9,14 @@ import ImageLightbox from '../components/ImageLightbox';
 import StoryViewer from '../components/StoryViewer';
 import { api } from '../services/api';
 
+// Helper to convert file to Base64
+const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
+
 const MyProfilePage: React.FC = () => {
   const { currentUser, logout, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -37,32 +45,32 @@ const MyProfilePage: React.FC = () => {
 
   const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          // In a real app, upload file to server via FormData
-          // const formData = new FormData();
-          // formData.append('file', file);
-          // const res = await api.post('/upload', formData);
-          // const imageUrl = res.url;
-          
-          // For now, assuming direct update or Base64 (simplified)
-          const imageUrl = URL.createObjectURL(file);
-          updateUser({ photo: imageUrl });
+          try {
+              const file = e.target.files[0];
+              const base64 = await toBase64(file);
+              // Send Base64 string to backend via updateUser (which calls PUT /profile)
+              // Ensure backend maps 'photo' or 'PhotoUrl' correctly
+              updateUser({ photo: base64 });
+          } catch (error) {
+              console.error("Error converting file", error);
+          }
       }
   };
 
-  const handleStoryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStoryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          const imageUrl = URL.createObjectURL(file);
-          // api.post('/users/story', { imageUrl });
-          updateUser({ story: imageUrl });
+          try {
+              const file = e.target.files[0];
+              const base64 = await toBase64(file);
+              updateUser({ story: base64 });
+          } catch (error) {
+              console.error("Error converting file", error);
+          }
       }
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const imageUrl = URL.createObjectURL(file);
       const currentGallery = currentUser.gallery || [];
       const galleryLimit = currentUser.isPremium ? 6 : 2;
       
@@ -71,9 +79,16 @@ const MyProfilePage: React.FC = () => {
           setShowPremiumModal(true);
           return;
       }
-      
-      // await api.post('/users/gallery', { imageUrl });
-      updateUser({ gallery: [...currentGallery, imageUrl] });
+
+      try {
+          const file = e.target.files[0];
+          const base64 = await toBase64(file);
+          // Assuming backend handles gallery array update via profile PUT or separate endpoint
+          // For now, we update the local user context which triggers the API PUT
+          updateUser({ gallery: [...currentGallery, base64] });
+      } catch (error) {
+          console.error("Error converting file", error);
+      }
     }
   };
 
@@ -81,7 +96,6 @@ const MyProfilePage: React.FC = () => {
     if (window.confirm('آیا از حذف این عکس مطمئن هستید؟')) {
         const currentGallery = currentUser.gallery || [];
         const newGallery = currentGallery.filter((_, i) => i !== index);
-        // await api.delete(`/users/gallery/${index}`);
         updateUser({ gallery: newGallery });
     }
   };

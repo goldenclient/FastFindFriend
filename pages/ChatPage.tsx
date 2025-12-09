@@ -2,12 +2,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Message as MessageType, User } from '../types';
-import { MOCK_MESSAGES } from '../data/messages';
-import { MOCK_USERS, CURRENT_USER_ID } from '../data/users';
 import Header from '../components/Header';
 import { PaperAirplaneIcon, PhotoIcon } from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
 import PremiumModal from '../components/PremiumModal';
+import { api } from '../services/api';
+
+const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
 
 const ChatPage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -20,14 +26,30 @@ const ChatPage: React.FC = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
-    const foundUser = MOCK_USERS.find(u => u.id === userId);
-    if (foundUser) {
-      setUser(foundUser);
-      setMessages(MOCK_MESSAGES[userId] || []);
-    } else {
-      // Handle user not found, maybe redirect
-      navigate('/chats');
-    }
+    const initChat = async () => {
+        try {
+            // Fetch User Details
+            const userData = await api.get<User>(`/users/${userId}`);
+            setUser(userData);
+
+            // Fetch Messages
+            // Assuming GET /messages/{userId} returns Message[]
+            const msgs = await api.get<any[]>(`/messages/${userId}`);
+            
+            setMessages(msgs.map(m => ({
+                id: m.id,
+                senderId: m.senderId,
+                receiverId: m.receiverId,
+                text: m.text,
+                imageUrl: m.imageUrl,
+                timestamp: new Date(m.timestamp)
+            })));
+        } catch (error) {
+            console.error(error);
+            // navigate('/chats');
+        }
+    };
+    if (userId) initChat();
   }, [userId, navigate]);
 
   useEffect(() => {
@@ -42,42 +64,69 @@ const ChatPage: React.FC = () => {
       return true;
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkPremium()) return;
     if (newMessage.trim() === '') return;
 
-    const message: MessageType = {
-      id: `m${Date.now()}`,
-      senderId: CURRENT_USER_ID,
-      receiverId: userId!,
-      text: newMessage,
-      timestamp: new Date(),
-    };
+    try {
+        const payload = {
+            receiverId: userId,
+            text: newMessage,
+            // imageUrl: null
+        };
+        
+        const response = await api.post<any>('/messages', payload);
+        
+        const message: MessageType = {
+            id: response.id || `temp-${Date.now()}`,
+            senderId: currentUser!.id,
+            receiverId: userId!,
+            text: newMessage,
+            timestamp: new Date(),
+        };
 
-    setMessages([...messages, message]);
-    setNewMessage('');
+        setMessages([...messages, message]);
+        setNewMessage('');
+    } catch (error) {
+        console.error("Failed to send message", error);
+    }
   };
   
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!checkPremium()) return;
 
     if (e.target.files && e.target.files[0]) {
-        const imageUrl = URL.createObjectURL(e.target.files[0]);
-        const message: MessageType = {
-            id: `m${Date.now()}`,
-            senderId: CURRENT_USER_ID,
-            receiverId: userId!,
-            text: '',
-            imageUrl: imageUrl,
-            timestamp: new Date(),
-        };
-        setMessages([...messages, message]);
+        try {
+            const file = e.target.files[0];
+            const base64 = await toBase64(file);
+            
+            const payload = {
+                receiverId: userId,
+                text: '',
+                imageUrl: base64
+            };
+            
+            const response = await api.post<any>('/messages', payload);
+            
+            const message: MessageType = {
+                id: response.id || `temp-${Date.now()}`,
+                senderId: currentUser!.id,
+                receiverId: userId!,
+                text: '',
+                imageUrl: base64, // Display local/base64 version
+                timestamp: new Date(),
+            };
+            setMessages([...messages, message]);
+            
+        } catch (error) {
+             console.error("Failed to send image", error);
+        }
     }
   };
 
   if (!user) {
-    return <div>در حال بارگذاری...</div>; // Or a proper loading spinner
+    return <div className="text-center mt-10">در حال بارگذاری...</div>;
   }
 
   return (
@@ -85,7 +134,7 @@ const ChatPage: React.FC = () => {
       <Header title={user.name} showBackButton={true} />
       <div className="flex-grow p-4 overflow-y-auto space-y-4">
         {messages.map(msg => (
-          <MessageBubble key={msg.id} message={msg} />
+          <MessageBubble key={msg.id} message={msg} currentUserId={currentUser!.id} />
         ))}
         <div ref={messagesEndRef} />
       </div>
@@ -114,8 +163,8 @@ const ChatPage: React.FC = () => {
   );
 };
 
-const MessageBubble: React.FC<{ message: MessageType }> = ({ message }) => {
-  const isSentByCurrentUser = message.senderId === CURRENT_USER_ID;
+const MessageBubble: React.FC<{ message: MessageType, currentUserId: string }> = ({ message, currentUserId }) => {
+  const isSentByCurrentUser = message.senderId === currentUserId;
   return (
     <div className={`flex ${isSentByCurrentUser ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-xs lg:max-w-md p-1 rounded-lg ${isSentByCurrentUser ? 'bg-pink-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}>
@@ -131,6 +180,5 @@ const MessageBubble: React.FC<{ message: MessageType }> = ({ message }) => {
     </div>
   );
 };
-
 
 export default ChatPage;

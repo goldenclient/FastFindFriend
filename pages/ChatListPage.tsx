@@ -1,31 +1,66 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Chat, User } from '../types';
-import { MOCK_CHATS } from '../data/messages';
-import { MOCK_USERS } from '../data/users';
 import Header from '../components/Header';
 import { Link } from 'react-router-dom';
 import { EllipsisVerticalIcon } from '../components/Icon';
 import StoryTray from '../components/StoryTray';
 import StoryViewer from '../components/StoryViewer';
+import { api } from '../services/api';
 
 const ChatListPage: React.FC = () => {
-  const [chats, setChats] = useState<Chat[]>(MOCK_CHATS);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [storyUsers, setStoryUsers] = useState<User[]>([]); // This needs an API too
   const [selectedStoryUser, setSelectedStoryUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Get unique users from chats to show in the story tray, or just show all mock users
-  const storyUsers = MOCK_USERS.slice(0, 8);
+  useEffect(() => {
+      const fetchChats = async () => {
+          try {
+              // Assume backend has GET /messages/chats returning Chat[]
+              const data = await api.get<any[]>('/messages/chats');
+              
+              // Map backend response to Chat interface if needed
+              const mappedChats: Chat[] = data.map(c => ({
+                  id: c.id,
+                  userId: c.userId,
+                  userName: c.userName,
+                  userPhoto: c.userPhoto || 'https://via.placeholder.com/150',
+                  lastMessage: c.lastMessage || '',
+                  timestamp: new Date(c.timestamp),
+                  unreadCount: c.unreadCount || 0
+              }));
+              
+              setChats(mappedChats);
+              
+              // For Story Tray, we might need a separate endpoint or just use chat users
+              // Here we just use chat users as story candidates for simplicity
+              setStoryUsers(mappedChats.map(c => ({ 
+                  id: c.userId, 
+                  name: c.userName, 
+                  photo: c.userPhoto 
+              } as User)));
+
+          } catch (error) {
+              console.error(error);
+          } finally {
+              setLoading(false);
+          }
+      };
+      fetchChats();
+  }, []);
 
   const handleDelete = (chatId: string) => {
     if (window.confirm("آیا از حذف این گفتگو مطمئن هستید؟ این عملیات غیرقابل بازگشت است.")) {
         setChats(chats.filter(chat => chat.id !== chatId));
+        // api.delete(`/messages/chats/${chatId}`);
     }
   };
 
   const handleBlock = (userName: string) => {
     if (window.confirm(`آیا مطمئن هستید که می‌خواهید ${userName} را مسدود کنید؟ دیگر پروفایل او را نخواهید دید و پیامی دریافت نخواهید کرد.`)) {
-        // In a real app, you would also remove the user from other lists
         alert(`${userName} مسدود شد.`);
+        // api.post(`/interaction/block`, { userName });
     }
   };
 
@@ -38,7 +73,9 @@ const ChatListPage: React.FC = () => {
         </div>
         
         <div className="pb-4">
-            {chats.length > 0 ? (
+            {loading ? (
+                <div className="text-center py-10">در حال بارگذاری...</div>
+            ) : chats.length > 0 ? (
             chats.map(chat => (
                 <ChatListItem key={chat.id} chat={chat} onDelete={handleDelete} onBlock={handleBlock} />
             ))
