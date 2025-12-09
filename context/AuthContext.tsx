@@ -1,44 +1,69 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { User } from '../types';
-import { MOCK_LOGGED_IN_USER } from '../data/users';
+import { api } from '../services/api';
 
 interface AuthContextType {
   currentUser: User | null;
-  login: (user: User) => void;
+  login: (token: string, user: User) => void;
   logout: () => void;
   updateUser: (updatedUser: Partial<User>) => void;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = (user: User) => {
-    // In a real app, this would involve a token
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = api.getToken();
+      if (token) {
+        try {
+          // Fetch current user profile using the token
+          const user = await api.get<User>('/users/profile');
+          setCurrentUser(user);
+        } catch (error) {
+          console.error('Failed to fetch user profile', error);
+          api.removeToken();
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
+  }, []);
+
+  const login = (token: string, user: User) => {
+    api.setToken(token);
     setCurrentUser(user);
   };
 
   const logout = () => {
+    api.removeToken();
     setCurrentUser(null);
   };
   
-  const updateUser = (updatedData: Partial<User>) => {
+  const updateUser = async (updatedData: Partial<User>) => {
     if (currentUser) {
-        setCurrentUser(prevUser => ({...prevUser!, ...updatedData}));
+        try {
+            // Optimistic update
+            setCurrentUser(prevUser => ({...prevUser!, ...updatedData}));
+            
+            // API call
+            await api.put('/users/profile', updatedData);
+        } catch (error) {
+            console.error('Failed to update profile', error);
+            // Revert on failure could be implemented here
+        }
     }
   };
 
-  // This would be replaced by checking a token in local storage
-  // For now, we just log in the mock user for demonstration
-  // useEffect(() => {
-  //   login(MOCK_LOGGED_IN_USER);
-  // }, []);
-
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout, updateUser }}>
-      {children}
+    <AuthContext.Provider value={{ currentUser, login, logout, updateUser, loading }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

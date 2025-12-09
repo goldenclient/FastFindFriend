@@ -2,46 +2,59 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { MOCK_LOGGED_IN_USER } from '../data/users';
+import { api } from '../services/api';
+import { User } from '../types';
 
 const LoginPage: React.FC = () => {
     const [step, setStep] = useState<1 | 2>(1);
     const [mobile, setMobile] = useState('');
     const [otp, setOtp] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const handleSendCode = (e: React.FormEvent) => {
+    const handleSendCode = async (e: React.FormEvent) => {
         e.preventDefault();
         if (mobile.length >= 10) {
-            // Simulate sending code
-            console.log('Sending OTP to', mobile);
-            setStep(2);
+            setLoading(true);
+            try {
+                // Call API to send OTP
+                await api.post('/auth/send-otp', { mobile });
+                setStep(2);
+            } catch (error) {
+                alert('خطا در ارسال کد تایید. لطفاً دوباره تلاش کنید.');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
         } else {
             alert('لطفاً شماره موبایل معتبر وارد کنید.');
         }
     };
 
-    const handleVerifyAndLogin = (e: React.FormEvent) => {
+    const handleVerifyAndLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         
         if (otp.length === 4) {
-            let userToLogin = { ...MOCK_LOGGED_IN_USER };
-            
-            // Check for special test user
-            if (mobile === '09123456789') {
-                userToLogin.isPremium = true;
-                userToLogin.isGhostMode = false;
-                alert('شما به عنوان کاربر ویژه وارد شدید!');
-            } else {
-                userToLogin.isPremium = false;
-                userToLogin.isGhostMode = false;
+            setLoading(true);
+            try {
+                // Call API to verify OTP
+                interface LoginResponse {
+                    token: string;
+                    user: User;
+                }
+                const response = await api.post<LoginResponse>('/auth/verify-otp', { mobile, otpCode: otp });
+                
+                login(response.token, response.user);
+                navigate('/');
+            } catch (error) {
+                alert('کد تایید نادرست است.');
+                console.error(error);
+            } finally {
+                setLoading(false);
             }
-
-            login(userToLogin);
-            navigate('/');
         } else {
-            alert('کد تایید نادرست است. (کد تستی: هر 4 رقمی)');
+            alert('کد تایید باید ۴ رقم باشد.');
         }
     };
 
@@ -75,10 +88,15 @@ const LoginPage: React.FC = () => {
                                 placeholder="09123456789"
                                 required
                                 autoFocus
+                                disabled={loading}
                             />
                         </div>
-                        <button type="submit" className="w-full bg-pink-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-pink-700 transition-colors duration-300 shadow-md">
-                            ارسال کد تایید
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="w-full bg-pink-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-pink-700 transition-colors duration-300 shadow-md disabled:bg-gray-400"
+                        >
+                            {loading ? 'در حال ارسال...' : 'ارسال کد تایید'}
                         </button>
                     </form>
                 ) : (
@@ -96,15 +114,21 @@ const LoginPage: React.FC = () => {
                                 placeholder="----"
                                 required
                                 autoFocus
+                                disabled={loading}
                             />
                         </div>
-                        <button type="submit" className="w-full bg-pink-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-pink-700 transition-colors duration-300 shadow-md">
-                            ورود
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="w-full bg-pink-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-pink-700 transition-colors duration-300 shadow-md disabled:bg-gray-400"
+                        >
+                            {loading ? 'در حال بررسی...' : 'ورود'}
                         </button>
                         <button 
                             type="button" 
                             onClick={() => setStep(1)} 
                             className="w-full text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            disabled={loading}
                         >
                             تغییر شماره موبایل
                         </button>

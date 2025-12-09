@@ -7,6 +7,7 @@ import { StarIcon, BookmarkIcon, HeartIcon, UserCircleIcon, ChevronRightIcon, Pl
 import PremiumModal from '../components/PremiumModal';
 import ImageLightbox from '../components/ImageLightbox';
 import StoryViewer from '../components/StoryViewer';
+import { api } from '../services/api';
 
 const MyProfilePage: React.FC = () => {
   const { currentUser, logout, updateUser } = useAuth();
@@ -34,9 +35,16 @@ const MyProfilePage: React.FC = () => {
     navigate('/login');
   };
 
-  const handleProfilePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           const file = e.target.files[0];
+          // In a real app, upload file to server via FormData
+          // const formData = new FormData();
+          // formData.append('file', file);
+          // const res = await api.post('/upload', formData);
+          // const imageUrl = res.url;
+          
+          // For now, assuming direct update or Base64 (simplified)
           const imageUrl = URL.createObjectURL(file);
           updateUser({ photo: imageUrl });
       }
@@ -46,11 +54,12 @@ const MyProfilePage: React.FC = () => {
       if (e.target.files && e.target.files[0]) {
           const file = e.target.files[0];
           const imageUrl = URL.createObjectURL(file);
+          // api.post('/users/story', { imageUrl });
           updateUser({ story: imageUrl });
       }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const imageUrl = URL.createObjectURL(file);
@@ -63,6 +72,7 @@ const MyProfilePage: React.FC = () => {
           return;
       }
       
+      // await api.post('/users/gallery', { imageUrl });
       updateUser({ gallery: [...currentGallery, imageUrl] });
     }
   };
@@ -71,6 +81,7 @@ const MyProfilePage: React.FC = () => {
     if (window.confirm('آیا از حذف این عکس مطمئن هستید؟')) {
         const currentGallery = currentUser.gallery || [];
         const newGallery = currentGallery.filter((_, i) => i !== index);
+        // await api.delete(`/users/gallery/${index}`);
         updateUser({ gallery: newGallery });
     }
   };
@@ -112,7 +123,6 @@ const MyProfilePage: React.FC = () => {
                 <div className={`w-full h-full p-[2px] ${currentUser.story ? 'bg-gradient-to-tr from-yellow-400 to-pink-600' : 'bg-gray-200'}`}>
                     <img src={currentUser.photo} alt={currentUser.name} className="w-full h-full rounded-full object-cover bg-white" />
                 </div>
-                {/* Plus icon on hover or always small indicator to upload story */}
                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <PlusIcon className="w-4 h-4 text-white" />
                  </div>
@@ -152,7 +162,7 @@ const MyProfilePage: React.FC = () => {
           <div className="p-6 text-center">
             <div className="relative inline-block">
                 <img 
-                    src={currentUser.photo} 
+                    src={currentUser.photo || 'https://via.placeholder.com/400'} 
                     alt={currentUser.name} 
                     className="w-28 h-28 rounded-full object-cover mx-auto ring-4 ring-pink-500 cursor-pointer" 
                     onClick={() => setLightboxImage(currentUser.photo)}

@@ -2,16 +2,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { MOCK_LOGGED_IN_USER } from '../data/users';
 import { Gender, MaritalStatus, User } from '../types';
 import { ArrowRightIcon } from '../components/Icon';
-
+import { api } from '../services/api';
 
 const RegisterPage: React.FC = () => {
-    const [step, setStep] = useState(0); // 0: Mobile/OTP, 1: Basic Info, 2: Details, 3: Bio
+    const [step, setStep] = useState(0); 
     const [mobile, setMobile] = useState('');
     const [otp, setOtp] = useState('');
     const [otpSent, setOtpSent] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState<Partial<User>>({
         name: '',
@@ -19,7 +19,7 @@ const RegisterPage: React.FC = () => {
         location: '',
         occupation: '',
         bio: '',
-        photo: 'https://picsum.photos/id/237/400/400',
+        photo: 'https://via.placeholder.com/400',
         maritalStatus: MaritalStatus.Single,
         height: 170,
         weight: 60,
@@ -43,36 +43,64 @@ const RegisterPage: React.FC = () => {
         }));
     };
 
-    const handleSendCode = (e: React.FormEvent) => {
+    const handleSendCode = async (e: React.FormEvent) => {
         e.preventDefault();
         if (mobile.length >= 10) {
-            setOtpSent(true);
+            setLoading(true);
+            try {
+                await api.post('/auth/send-otp', { mobile });
+                setOtpSent(true);
+            } catch (e) {
+                alert('خطا در ارسال کد.');
+            } finally {
+                setLoading(false);
+            }
         } else {
             alert('لطفاً شماره موبایل معتبر وارد کنید.');
         }
     };
 
-    const handleVerifyOtp = (e: React.FormEvent) => {
+    const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         if (otp.length === 4) {
-            setStep(1);
+            setLoading(true);
+            try {
+                // Assuming verify-otp returns a token even if profile incomplete, or use a temp token
+                // For simplified flow, we verify OTP, get a token, then next steps are Profile Updates.
+                const response: any = await api.post('/auth/verify-otp', { mobile, otpCode: otp });
+                api.setToken(response.token);
+                setStep(1);
+            } catch (e) {
+                alert('کد تایید صحیح نیست.');
+            } finally {
+                setLoading(false);
+            }
         } else {
             alert('کد تایید صحیح نیست.');
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, you would submit the data to a server.
-        const newUser: User = {
-            id: 'newUser',
-            ...MOCK_LOGGED_IN_USER,
-            ...formData,
-        } as User;
-
-        alert('ثبت نام با موفقیت انجام شد!');
-        login(newUser);
-        navigate('/');
+        setLoading(true);
+        try {
+            // Update the profile with collected data
+            await api.put('/users/profile', formData);
+            
+            // Fetch full user and login
+            const fullUser = await api.get<User>('/users/profile');
+            const token = api.getToken();
+            if (token) {
+                 login(token, fullUser);
+                 alert('ثبت نام با موفقیت انجام شد!');
+                 navigate('/');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('خطا در تکمیل ثبت نام.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderStep = () => {
@@ -83,13 +111,17 @@ const RegisterPage: React.FC = () => {
                          {!otpSent ? (
                             <form onSubmit={handleSendCode} className="space-y-4">
                                 <InputField name="mobile" label="شماره موبایل" value={mobile} onChange={(e: any) => setMobile(e.target.value)} placeholder="09123456789" type="tel" required />
-                                <button type="submit" className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600">ارسال کد تایید</button>
+                                <button type="submit" disabled={loading} className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600 disabled:bg-gray-400">
+                                    {loading ? '...' : 'ارسال کد تایید'}
+                                </button>
                             </form>
                          ) : (
                             <form onSubmit={handleVerifyOtp} className="space-y-4">
                                 <p className="text-sm text-center text-gray-500">کد ارسال شده به {mobile} را وارد کنید</p>
                                 <InputField name="otp" label="کد تایید" value={otp} onChange={(e: any) => setOtp(e.target.value)} placeholder="----" required />
-                                <button type="submit" className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600">تایید و ادامه</button>
+                                <button type="submit" disabled={loading} className="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600 disabled:bg-gray-400">
+                                    {loading ? '...' : 'تایید و ادامه'}
+                                </button>
                                 <button type="button" onClick={() => setOtpSent(false)} className="w-full text-sm text-gray-500 mt-2">اصلاح شماره موبایل</button>
                             </form>
                          )}

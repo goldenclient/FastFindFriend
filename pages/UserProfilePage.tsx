@@ -2,19 +2,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { User } from '../types';
-import { MOCK_USERS } from '../data/users';
 import Header from '../components/Header';
 import { HeartIcon, BookmarkIcon, FlagIcon, ChatBubbleOvalLeftEllipsisIcon, LockClosedIcon } from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
 import PremiumModal from '../components/PremiumModal';
 import ImageLightbox from '../components/ImageLightbox';
 import StoryViewer from '../components/StoryViewer';
+import { api } from '../services/api';
 
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -25,12 +26,23 @@ const UserProfilePage: React.FC = () => {
   const [viewingStory, setViewingStory] = useState(false);
 
   useEffect(() => {
-    const foundUser = MOCK_USERS.find(u => u.id === userId);
-    if (foundUser) {
-      setUser(foundUser);
-    } else {
-      navigate('/');
-    }
+    const fetchUser = async () => {
+        try {
+            const data = await api.get<User>(`/users/${userId}`);
+            setUser(data);
+            
+            // Note: Check interaction status (like, block) here if APIs exist
+            // const interaction = await api.get(`/interactions/status/${userId}`);
+            // setIsLiked(interaction.isLiked);
+        } catch (error) {
+            console.error(error);
+            navigate('/');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (userId) fetchUser();
   }, [userId, navigate]);
 
   const handleScroll = () => {
@@ -43,9 +55,21 @@ const UserProfilePage: React.FC = () => {
   const handleReport = () => {
     if (window.confirm(`آیا مطمئن هستید که می‌خواهید ${user?.name} را گزارش کنید؟`)) {
       alert(`${user?.name} گزارش شد.`);
+      // api.post(`/interaction/report/${userId}`, {});
     }
   };
   
+  const handleLike = async () => {
+      // Optimistic UI update
+      setIsLiked(!isLiked);
+      try {
+          await api.post(`/interaction/like/${userId}`, {});
+      } catch (e) {
+          console.error('Like failed', e);
+          setIsLiked(!isLiked); // Revert
+      }
+  };
+
   const handleSendMessage = () => {
       navigate(`/chat/${userId}`);
   };
@@ -65,8 +89,8 @@ const UserProfilePage: React.FC = () => {
       }
   };
 
-  if (!user) {
-    return <div>در حال بارگذاری...</div>;
+  if (loading || !user) {
+    return <div className="flex justify-center items-center h-full">در حال بارگذاری...</div>;
   }
 
   // Header Props Logic
@@ -84,20 +108,18 @@ const UserProfilePage: React.FC = () => {
       </div>
   );
 
-  // When scrolled, show Bookmark next to back button (Right Action)
   const headerRightAction = isScrolled ? (
       <button onClick={() => setIsBookmarked(!isBookmarked)} className={`ml-2 ${isBookmarked ? 'text-pink-500' : 'text-gray-500'}`}>
           <BookmarkIcon className="h-6 w-6" />
       </button>
   ) : null;
 
-  // When scrolled, show Message and Like on the Left
   const headerLeftAction = isScrolled ? (
       <div className="flex items-center space-x-3 space-x-reverse animate-fade-in">
           <button onClick={handleSendMessage} className="text-gray-500 hover:text-pink-500">
               <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
           </button>
-          <button onClick={() => setIsLiked(!isLiked)} className={`${isLiked ? 'text-pink-500' : 'text-gray-500'}`}>
+          <button onClick={handleLike} className={`${isLiked ? 'text-pink-500' : 'text-gray-500'}`}>
               <HeartIcon className="h-6 w-6" />
           </button>
       </div>
@@ -119,19 +141,18 @@ const UserProfilePage: React.FC = () => {
       >
         <div className="relative">
           <img 
-            src={user.photo} 
+            src={user.photo || 'https://via.placeholder.com/400'} 
             alt={user.name} 
             className="w-full h-96 object-cover cursor-pointer" 
             onClick={() => handleGalleryClick(user.photo)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none"></div>
           
-          {/* Left Overlay Icons (Stacked Vertically) */}
           <div className={`absolute top-4 left-4 flex flex-col gap-3 transition-opacity duration-300 ${isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                <button onClick={handleSendMessage} className="bg-black/30 backdrop-blur-md p-2 rounded-full text-white hover:bg-pink-500 transition-colors" title="پیام">
                   <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
                </button>
-               <button onClick={() => setIsLiked(!isLiked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-white' : 'text-white hover:bg-pink-500'}`} title="لایک">
+               <button onClick={handleLike} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-white' : 'text-white hover:bg-pink-500'}`} title="لایک">
                   <HeartIcon className="h-6 w-6" />
                </button>
                <button onClick={() => setIsBookmarked(!isBookmarked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isBookmarked ? 'text-pink-500 bg-white' : 'text-white hover:text-pink-500'}`} title="نشان کردن">
@@ -142,7 +163,6 @@ const UserProfilePage: React.FC = () => {
                </button>
           </div>
 
-          {/* Right Overlay Story Avatar */}
           {user.story && (
               <div 
                 className={`absolute top-4 right-4 transition-opacity duration-300 ${isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
