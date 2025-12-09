@@ -1,12 +1,10 @@
 # مستندات کامل بک‌اند (ASP.NET Core 8)
 
-این فایل شامل تمام کدهای مورد نیاز برای راه‌اندازی بک‌اند است. مشکل "خطا در خواندن users/{id}" معمولاً به دلیل **چرخه بی‌پایان JSON (Circular Reference)** رخ می‌دهد. در کدهای زیر با استفاده از `[JsonIgnore]` و تنظیمات `Program.cs` این مشکل رفع شده است.
+این فایل شامل تمام کدهای مورد نیاز برای راه‌اندازی بک‌اند است. این کدها شامل رفع مشکل Circular Reference و پیاده‌سازی قابلیت‌های لایک، بلاک و گزارش است.
 
 ---
 
 ## 1. تنظیمات اصلی (Program.cs)
-
-این بخش حیاتی است. خط `ReferenceHandler.IgnoreCycles` باعث می‌شود که اگر در دیتابیس رابطه‌های دوطرفه (User -> Image -> User) وجود داشت، برنامه کرش نکند.
 
 ```csharp
 using System.Text.Json.Serialization;
@@ -23,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // 2. Add Controllers with JSON Cycle Fix
+// نکته مهم: این تنظیم جلوی خطای "A possible object cycle was detected" را می‌گیرد.
 builder.Services.AddControllers().AddJsonOptions(x =>
     x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
@@ -34,6 +33,7 @@ builder.Services.AddCors(options =>
 });
 
 // 4. JWT Authentication
+// کلید باید دقیقاً با کلید داخل AuthController یکسان باشد.
 var key = Encoding.ASCII.GetBytes("THIS_IS_A_VERY_LONG_SECRET_KEY_FOR_JWT_SECURITY_AT_LEAST_32_CHARS");
 builder.Services.AddAuthentication(x =>
 {
@@ -52,6 +52,9 @@ builder.Services.AddAuthentication(x =>
         ValidateAudience = false
     };
 });
+
+// 5. HttpContext Accessor (برای دسترسی به User ID در سرویس‌ها)
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -87,6 +90,7 @@ namespace FFF.Backend.Data
         public DbSet<UserGalleryImage> UserGalleryImages { get; set; }
         public DbSet<UserSettings> UserSettings { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<UserInteraction> UserInteractions { get; set; } // جدید: برای لایک و بلاک
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -96,7 +100,7 @@ namespace FFF.Backend.Data
                 .WithOne(s => s.User)
                 .HasForeignKey<UserSettings>(s => s.UserId);
                 
-            // جلوگیری از خطای Multiple Cascade Paths در SQL Server برای مسیج‌ها
+            // جلوگیری از خطای Multiple Cascade Paths برای پیام‌ها
             modelBuilder.Entity<Message>()
                 .HasOne(m => m.Sender)
                 .WithMany(u => u.SentMessages)
@@ -108,6 +112,19 @@ namespace FFF.Backend.Data
                 .WithMany(u => u.ReceivedMessages)
                 .HasForeignKey(m => m.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // تنظیمات جدول تعاملات (Interaction)
+            modelBuilder.Entity<UserInteraction>()
+                .HasOne(i => i.SourceUser)
+                .WithMany()
+                .HasForeignKey(i => i.SourceUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<UserInteraction>()
+                .HasOne(i => i.TargetUser)
+                .WithMany()
+                .HasForeignKey(i => i.TargetUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
@@ -117,7 +134,7 @@ namespace FFF.Backend.Data
 
 ## 3. مدل‌ها (Models)
 
-به ویژگی **`[JsonIgnore]`** در کلاس‌های فرزند دقت کنید. این ویژگی جلوی خطا را می‌گیرد.
+تمام مدل‌ها شامل `[JsonIgnore]` برای جلوگیری از حلقه در سریال‌سازی هستند.
 
 ```csharp
 using System.ComponentModel.DataAnnotations;
@@ -133,12 +150,12 @@ namespace FFF.Backend.Models
         public string Mobile { get; set; }
         public string? Name { get; set; }
         public int Age { get; set; }
-        public string? Gender { get; set; }
+        public string? Gender { get; set; } // Male, Female, Other
         public string? Location { get; set; }
         public string? Occupation { get; set; }
         public string? Bio { get; set; }
-        public string? PhotoUrl { get; set; }
-        public string? StoryUrl { get; set; }
+        public string? PhotoUrl { get; set; } // عکس اصلی پروفایل
+        public string? StoryUrl { get; set; } // عکس استوری
         public string? MaritalStatus { get; set; }
         public int Height { get; set; }
         public int Weight { get; set; }
@@ -150,7 +167,9 @@ namespace FFF.Backend.Models
         public bool IsGhostMode { get; set; }
 
         // OTP Fields
+        [JsonIgnore]
         public string? OtpCode { get; set; }
+        [JsonIgnore]
         public DateTime? OtpExpiry { get; set; }
 
         public UserSettings? Settings { get; set; }
@@ -169,7 +188,7 @@ namespace FFF.Backend.Models
         public Guid UserId { get; set; }
         public string ImageUrl { get; set; }
 
-        [JsonIgnore] // <<--- این خط بسیار مهم است
+        [JsonIgnore]
         public User User { get; set; }
     }
 
@@ -182,7 +201,7 @@ namespace FFF.Backend.Models
         public bool BiometricLogin { get; set; }
         public bool ProfileViewNotification { get; set; }
 
-        [JsonIgnore] // <<--- جلوگیری از چرخه
+        [JsonIgnore]
         public User User { get; set; }
     }
     
@@ -201,6 +220,30 @@ namespace FFF.Backend.Models
         [JsonIgnore]
         public User Receiver { get; set; }
     }
+
+    // مدل جدید برای لایک، بلاک و ریپورت
+    public class UserInteraction
+    {
+        [Key]
+        public Guid Id { get; set; }
+        public Guid SourceUserId { get; set; }
+        public Guid TargetUserId { get; set; }
+        public InteractionType Type { get; set; } // Like, Block, Report
+        public DateTime Timestamp { get; set; }
+
+        [JsonIgnore]
+        public User SourceUser { get; set; }
+        [JsonIgnore]
+        public User TargetUser { get; set; }
+    }
+
+    public enum InteractionType
+    {
+        Like = 0,
+        Block = 1,
+        Report = 2,
+        View = 3
+    }
 }
 ```
 
@@ -209,13 +252,15 @@ namespace FFF.Backend.Models
 ## 4. کنترلرها (Controllers)
 
 ### UsersController.cs
-این همان کنترلری است که شما با آن مشکل داشتید. با کدهای بالا و `Include` زیر، مشکل حل می‌شود.
+مدیریت پروفایل و لیست کاربران (خانه).
 
 ```csharp
 using FFF.Backend.Data;
 using FFF.Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace FFF.Backend.Controllers
 {
@@ -230,7 +275,44 @@ namespace FFF.Backend.Controllers
             _context = context;
         }
 
+        // GET: api/users
+        // لیست کاربران برای صفحه اصلی (با فیلترها)
+        [HttpGet]
+        public async Task<IActionResult> GetUsers(
+            [FromQuery] int maxAge, 
+            [FromQuery] string? gender,
+            [FromQuery] bool isOnline,
+            [FromQuery] string? location)
+        {
+            var query = _context.Users.Include(u => u.GalleryImages).AsQueryable();
+
+            // فیلتر کردن کاربر جاری
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId != null)
+            {
+                var id = Guid.Parse(currentUserId);
+                query = query.Where(u => u.Id != id);
+            }
+
+            if (maxAge > 0)
+                query = query.Where(u => u.Age <= maxAge);
+            
+            if (!string.IsNullOrEmpty(gender) && gender != "همه")
+                query = query.Where(u => u.Gender == gender);
+                
+            if (isOnline)
+                query = query.Where(u => u.IsOnline == true);
+
+            if (!string.IsNullOrEmpty(location))
+                query = query.Where(u => u.Location.Contains(location));
+
+            // فقط ۵۰ تا برگردان برای پرفورمنس
+            var users = await query.Take(50).ToListAsync();
+            return Ok(users);
+        }
+
         // GET: api/users/{id}
+        // دریافت پروفایل تکی (برای لاگین و مشاهده پروفایل دیگران)
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserProfile(Guid id)
         {
@@ -245,28 +327,48 @@ namespace FFF.Backend.Controllers
         }
 
         // PUT: api/users/profile
+        // ویرایش پروفایل کاربر جاری
+        [Authorize]
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] User updatedUser)
         {
-            // در یک سناریوی واقعی، ID را از توکن می‌گیریم: User.FindFirst("id")?.Value
-            // اینجا برای سادگی فرض می‌کنیم ID در بادی ارسال شده یا مکانیزم دیگری دارد
-            // برای تست: 
-            var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
             
             var id = Guid.Parse(userIdStr);
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users.Include(u => u.Settings).FirstOrDefaultAsync(u => u.Id == id);
 
             if (user == null) return NotFound();
 
-            user.Name = updatedUser.Name ?? user.Name;
-            user.Bio = updatedUser.Bio ?? user.Bio;
-            user.Occupation = updatedUser.Occupation ?? user.Occupation;
-            user.Location = updatedUser.Location ?? user.Location;
-            // ... بروزرسانی سایر فیلدها
+            // بروزرسانی فیلدها
+            if (updatedUser.Name != null) user.Name = updatedUser.Name;
+            if (updatedUser.Bio != null) user.Bio = updatedUser.Bio;
+            if (updatedUser.Occupation != null) user.Occupation = updatedUser.Occupation;
+            if (updatedUser.Location != null) user.Location = updatedUser.Location;
+            if (updatedUser.Age > 0) user.Age = updatedUser.Age;
+            if (updatedUser.Height > 0) user.Height = updatedUser.Height;
+            if (updatedUser.Weight > 0) user.Weight = updatedUser.Weight;
+            if (updatedUser.Gender != null) user.Gender = updatedUser.Gender;
+            if (updatedUser.MaritalStatus != null) user.MaritalStatus = updatedUser.MaritalStatus;
+            if (updatedUser.FavoriteSport != null) user.FavoriteSport = updatedUser.FavoriteSport;
+            if (updatedUser.PartnerPreferences != null) user.PartnerPreferences = updatedUser.PartnerPreferences;
             
+            // بروزرسانی عکس‌ها (Base64)
             if (!string.IsNullOrEmpty(updatedUser.PhotoUrl)) user.PhotoUrl = updatedUser.PhotoUrl;
             if (!string.IsNullOrEmpty(updatedUser.StoryUrl)) user.StoryUrl = updatedUser.StoryUrl;
+            
+            // بروزرسانی حالت روح
+            user.IsGhostMode = updatedUser.IsGhostMode;
+
+            // بروزرسانی تنظیمات
+            if (updatedUser.Settings != null)
+            {
+                if (user.Settings == null) user.Settings = new UserSettings { UserId = user.Id };
+                user.Settings.NewLikeNotification = updatedUser.Settings.NewLikeNotification;
+                user.Settings.NewMessageNotification = updatedUser.Settings.NewMessageNotification;
+                user.Settings.ProfileViewNotification = updatedUser.Settings.ProfileViewNotification;
+                user.Settings.BiometricLogin = updatedUser.Settings.BiometricLogin;
+            }
 
             await _context.SaveChangesAsync();
             return Ok(user);
@@ -275,8 +377,157 @@ namespace FFF.Backend.Controllers
 }
 ```
 
+### InteractionController.cs (جدید)
+این کنترلر وظیفه لایک، بلاک و گزارش را دارد.
+
+```csharp
+using FFF.Backend.Data;
+using FFF.Backend.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+
+namespace FFF.Backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize] // تمام متدها نیاز به توکن دارند
+    public class InteractionController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public InteractionController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        // POST: api/interaction/like/{targetUserId}
+        [HttpPost("like/{targetUserId}")]
+        public async Task<IActionResult> LikeUser(Guid targetUserId)
+        {
+            var sourceUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            // بررسی تکراری بودن
+            var exists = await _context.UserInteractions
+                .AnyAsync(i => i.SourceUserId == sourceUserId && i.TargetUserId == targetUserId && i.Type == InteractionType.Like);
+
+            if (exists) return Ok(new { message = "Already liked" });
+
+            var interaction = new UserInteraction
+            {
+                SourceUserId = sourceUserId,
+                TargetUserId = targetUserId,
+                Type = InteractionType.Like,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _context.UserInteractions.Add(interaction);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Liked successfully" });
+        }
+
+        // GET: api/interaction/likes
+        // لیست کسانی که من را لایک کرده‌اند (دریافتی)
+        [HttpGet("likes")]
+        public async Task<IActionResult> GetReceivedLikes()
+        {
+            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            // کاربرانی که currentUserId را لایک کرده‌اند
+            var likers = await _context.UserInteractions
+                .Where(i => i.TargetUserId == currentUserId && i.Type == InteractionType.Like)
+                .Select(i => i.SourceUser) // Join خودکار با جدول Users
+                .ToListAsync();
+
+            return Ok(likers);
+        }
+
+        // POST: api/interaction/block
+        [HttpPost("block")]
+        public async Task<IActionResult> BlockUser([FromBody] BlockRequest request)
+        {
+            var sourceUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            
+            // پیدا کردن ID از روی UserName اگر فرانت فقط نام می‌فرستد (که در ChatListPage هست)
+            // بهتر است فرانت ID بفرستد، اما برای سازگاری:
+            var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Name == request.UserName);
+            if (targetUser == null) return NotFound("User not found");
+
+            var interaction = new UserInteraction
+            {
+                SourceUserId = sourceUserId,
+                TargetUserId = targetUser.Id,
+                Type = InteractionType.Block,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _context.UserInteractions.Add(interaction);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User blocked" });
+        }
+
+        // POST: api/interaction/report/{targetUserId}
+        [HttpPost("report/{targetUserId}")]
+        public async Task<IActionResult> ReportUser(Guid targetUserId)
+        {
+            var sourceUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var interaction = new UserInteraction
+            {
+                SourceUserId = sourceUserId,
+                TargetUserId = targetUserId,
+                Type = InteractionType.Report,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _context.UserInteractions.Add(interaction);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Report submitted" });
+        }
+
+        // GET: api/interaction/blocks
+        [HttpGet("blocks")]
+        public async Task<IActionResult> GetBlockedUsers()
+        {
+            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var blockedUsers = await _context.UserInteractions
+                .Where(i => i.SourceUserId == currentUserId && i.Type == InteractionType.Block)
+                .Select(i => i.TargetUser)
+                .ToListAsync();
+
+            return Ok(blockedUsers);
+        }
+
+        // POST: api/interaction/unblock/{targetUserId}
+        [HttpPost("unblock/{targetUserId}")]
+        public async Task<IActionResult> UnblockUser(Guid targetUserId)
+        {
+            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var blockRecord = await _context.UserInteractions
+                .FirstOrDefaultAsync(i => i.SourceUserId == currentUserId && i.TargetUserId == targetUserId && i.Type == InteractionType.Block);
+
+            if (blockRecord != null)
+            {
+                _context.UserInteractions.Remove(blockRecord);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { message = "Unblocked" });
+        }
+    }
+
+    public class BlockRequest { public string UserName { get; set; } }
+}
+```
+
 ### AuthController.cs
-مسئول ارسال OTP و لاگین.
+کنترلر احراز هویت با OTP.
 
 ```csharp
 using FFF.Backend.Data;
@@ -314,20 +565,18 @@ namespace FFF.Backend.Controllers
                     Name = "کاربر جدید",
                     Age = 18,
                     IsPremium = false,
-                    Settings = new UserSettings() // ایجاد تنظیمات پیش‌فرض
+                    Settings = new UserSettings()
                 };
                 _context.Users.Add(user);
             }
 
-            // تولید کد ۴ رقمی تصادفی
             var otp = new Random().Next(1000, 9999).ToString();
             user.OtpCode = otp;
             user.OtpExpiry = DateTime.UtcNow.AddMinutes(2);
 
             await _context.SaveChangesAsync();
-
-            // در محیط واقعی، اینجا باید SMS ارسال شود.
-            // برای تست، کد را در کنسول لاگ می‌کنیم یا برمی‌گردانیم (فقط برای دیباگ)
+            
+            // فقط برای دیباگ، در پروداکشن حذف شود
             return Ok(new { message = "OTP Sent", debugCode = otp });
         }
 
@@ -346,11 +595,9 @@ namespace FFF.Backend.Controllers
                 return BadRequest(new { message = "OTP Expired" });
             }
 
-            // پاک کردن کد مصرف شده
             user.OtpCode = null;
             await _context.SaveChangesAsync();
 
-            // تولید توکن
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(SECRET_KEY);
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -376,16 +623,21 @@ namespace FFF.Backend.Controllers
 ```
 
 ### MessagesController.cs
+چت ساده.
 
 ```csharp
 using FFF.Backend.Data;
+using FFF.Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace FFF.Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MessagesController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -395,13 +647,11 @@ namespace FFF.Backend.Controllers
             _context = context;
         }
 
+        // GET: api/messages/{userId}
         [HttpGet("{userId}")]
         public async Task<IActionResult> GetMessages(Guid userId)
         {
-            // دریافت ID کاربر جاری از توکن
-            var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(currentUserIdStr)) return Unauthorized();
-            var currentUserId = Guid.Parse(currentUserIdStr);
+            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             var messages = await _context.Messages
                 .Where(m => (m.SenderId == currentUserId && m.ReceiverId == userId) ||
@@ -411,6 +661,69 @@ namespace FFF.Backend.Controllers
 
             return Ok(messages);
         }
+
+        // POST: api/messages
+        [HttpPost]
+        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
+        {
+            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var message = new Message
+            {
+                SenderId = currentUserId,
+                ReceiverId = request.ReceiverId,
+                Text = request.Text,
+                ImageUrl = request.ImageUrl,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            return Ok(message);
+        }
+
+        // GET: api/messages/chats
+        // لیست آخرین گفتگوها
+        [HttpGet("chats")]
+        public async Task<IActionResult> GetChats()
+        {
+            var currentUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            // کوئری پیچیده برای پیدا کردن آخرین پیام هر گفتگو
+            // برای سادگی، تمام پیام‌ها را می‌گیریم و در حافظه گروپ می‌کنیم (در پروداکشن باید بهینه شود)
+            var allMessages = await _context.Messages
+                .Include(m => m.Sender)
+                .Include(m => m.Receiver)
+                .Where(m => m.SenderId == currentUserId || m.ReceiverId == currentUserId)
+                .OrderByDescending(m => m.Timestamp)
+                .ToListAsync();
+
+            var chats = allMessages
+                .GroupBy(m => m.SenderId == currentUserId ? m.ReceiverId : m.SenderId)
+                .Select(g => {
+                    var lastMsg = g.First();
+                    var otherUser = lastMsg.SenderId == currentUserId ? lastMsg.Receiver : lastMsg.Sender;
+                    return new {
+                        Id = g.Key,
+                        UserId = otherUser.Id,
+                        UserName = otherUser.Name,
+                        UserPhoto = otherUser.PhotoUrl,
+                        LastMessage = lastMsg.Text ?? "تصویر",
+                        Timestamp = lastMsg.Timestamp,
+                        UnreadCount = 0 // پیاده‌سازی نشده
+                    };
+                });
+
+            return Ok(chats);
+        }
+    }
+
+    public class SendMessageRequest
+    {
+        public Guid ReceiverId { get; set; }
+        public string? Text { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }
 ```
