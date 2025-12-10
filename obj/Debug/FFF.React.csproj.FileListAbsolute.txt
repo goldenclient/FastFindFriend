@@ -1,0 +1,2 @@
+C:\Work\FastFindFriends\FFF.React\obj\Debug\FFF.React.csproj.AssemblyReference.cache
+C:\Work\FastFindFriends\FFF.React\obj\Debug\FFF.React.csproj.CoreCompileInputs.cache
