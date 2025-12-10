@@ -31,6 +31,7 @@ export interface User {
   id: string;
   name: string;
   age: number;
+  birthDate?: string; // ISO Date string YYYY-MM-DD
   gender: Gender;
   location: string;
   occupation: string;

@@ -87,8 +87,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Optimistic update
             setCurrentUser(prevUser => ({...prevUser!, ...updatedData}));
             
+            // Prepare payload for Backend DTO
+            // We need to map 'photo' -> 'PhotoUrl' and 'story' -> 'StoryUrl'
+            // And ensure we don't send fields that might confuse the backend if it's strict
+            const payload: any = { ...updatedData };
+            
+            if (payload.photo) {
+                payload.PhotoUrl = payload.photo;
+            }
+            if (payload.story) {
+                payload.StoryUrl = payload.story;
+            }
+            
             // API call
-            await api.put('/users/profile', updatedData);
+            await api.put('/users/profile', payload);
         } catch (error) {
             console.error('Failed to update profile', error);
             // Revert on failure could be implemented here
