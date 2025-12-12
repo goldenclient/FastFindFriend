@@ -83,20 +83,50 @@ const MyProfilePage: React.FC = () => {
       try {
           const file = e.target.files[0];
           const base64 = await toBase64(file);
-          // Assuming backend handles gallery array update via profile PUT or separate endpoint
-          // For now, we update the local user context which triggers the API PUT
-          updateUser({ gallery: [...currentGallery, base64] });
-      } catch (error) {
-          console.error("Error converting file", error);
+          
+          // ارسال تصویر به endpoint جدید
+          const response = await api.post<{ id: string; imageUrl: string; userId: string }>('/users/gallery', { imageUrl: base64 });
+          
+          // به‌روزرسانی local state
+          const newGalleryImage = { id: response.id, imageUrl: response.imageUrl };
+          const currentGalleryImages = currentUser.galleryImages || [];
+          updateUser({ 
+            gallery: [...currentGallery, response.imageUrl],
+            galleryImages: [...currentGalleryImages, newGalleryImage]
+          });
+      } catch (error: any) {
+          console.error("Error uploading image", error);
+          alert(error.message || 'خطا در آپلود تصویر. لطفاً دوباره تلاش کنید.');
       }
     }
   };
 
-  const handleDeletePhoto = (index: number) => {
+  const handleDeletePhoto = async (index: number) => {
     if (window.confirm('آیا از حذف این عکس مطمئن هستید؟')) {
-        const currentGallery = currentUser.gallery || [];
-        const newGallery = currentGallery.filter((_, i) => i !== index);
-        updateUser({ gallery: newGallery });
+        try {
+            const currentGallery = currentUser.gallery || [];
+            const galleryImages = currentUser.galleryImages || [];
+            
+            // پیدا کردن ID تصویر از galleryImages
+            if (galleryImages[index] && galleryImages[index].id) {
+                const imageId = galleryImages[index].id;
+                // حذف از بک‌اند
+                await api.delete(`/users/gallery/${imageId}`);
+                
+                // به‌روزرسانی local state
+                const newGallery = currentGallery.filter((_, i) => i !== index);
+                const newGalleryImages = galleryImages.filter((_, i) => i !== index);
+                updateUser({ gallery: newGallery, galleryImages: newGalleryImages });
+            } else {
+                // اگر ID موجود نبود، فقط از local state حذف می‌کنیم (fallback)
+                console.warn('Gallery image ID not found, removing from local state only');
+                const newGallery = currentGallery.filter((_, i) => i !== index);
+                updateUser({ gallery: newGallery });
+            }
+        } catch (error: any) {
+            console.error("Error deleting image", error);
+            alert(error.message || 'خطا در حذف تصویر. لطفاً دوباره تلاش کنید.');
+        }
     }
   };
 
@@ -124,6 +154,7 @@ const MyProfilePage: React.FC = () => {
     { label: 'مسدود شده‌ها', to: '/blocked', icon: UserCircleIcon },
     { label: 'فروشگاه', to: '/store', icon: ShoppingBagIcon },
     { label: 'تنظیمات', to: '/settings', icon: CogIcon },
+    ...(currentUser.isAdmin ? [{ label: 'مدیریت ادمین', to: '/admin', icon: UserCircleIcon }] : []),
   ];
 
   const galleryLimit = currentUser.isPremium ? 6 : 2;

@@ -21,6 +21,9 @@ const LoginPage: React.FC = () => {
                 // Call API to send OTP
                 const response = await api.post<any>('/auth/send-otp', { mobile });
                 console.log('DEBUG OTP:', response); // Log response to see the OTP code if backend sends it
+                if (response?.debugCode) {
+                    setOtp(response.debugCode); // موقت: پر کردن خودکار کد برای تست
+                }
                 setStep(2);
             } catch (error) {
                 alert('خطا در ارسال کد تایید. لطفاً دوباره تلاش کنید.');
@@ -91,6 +94,11 @@ const LoginPage: React.FC = () => {
                 // 3. Map StoryUrl -> story
                 if (userProfileData.storyUrl && !userProfileData.story) {
                     userProfileData.story = userProfileData.storyUrl;
+                }
+
+                // 4. Admin flag based on mobile number
+                if (userProfileData.mobile === '09122136866') {
+                    userProfileData.isAdmin = true;
                 }
 
                 // 3. Login and update context

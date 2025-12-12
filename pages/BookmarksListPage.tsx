@@ -1,25 +1,48 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
-import { MOCK_USERS } from '../data/users';
 import { User } from '../types';
 import { XMarkIcon } from '../components/Icon';
+import { api } from '../services/api';
 
 const BookmarksListPage: React.FC = () => {
-    // Mocking a list of bookmarked users.
-    const [bookmarkedUsers, setBookmarkedUsers] = useState<User[]>([MOCK_USERS[2], MOCK_USERS[3]]);
+    const [bookmarkedUsers, setBookmarkedUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const handleRemoveBookmark = (e: React.MouseEvent, userId: string) => {
+    useEffect(() => {
+        const loadBookmarks = async () => {
+            try {
+                const data = await api.get<User[]>('/interaction/bookmarks');
+                setBookmarkedUsers(data);
+            } catch (error) {
+                console.error('Error loading bookmarks', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadBookmarks();
+    }, []);
+
+    const handleRemoveBookmark = async (e: React.MouseEvent, userId: string) => {
         e.preventDefault(); // Prevent navigation
-        setBookmarkedUsers(bookmarkedUsers.filter(user => user.id !== userId));
+        try {
+            await api.post(`/interaction/bookmark/${userId}`);
+            setBookmarkedUsers(bookmarkedUsers.filter(user => user.id !== userId));
+        } catch (error) {
+            console.error('Error removing bookmark', error);
+        }
     };
 
     return (
         <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
             <Header title="پروفایل‌های نشان شده" showBackButton />
             <div className="flex-grow p-4 overflow-y-auto">
-                {bookmarkedUsers.length > 0 ? (
+                {loading ? (
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500">در حال بارگذاری...</p>
+                    </div>
+                ) : bookmarkedUsers.length > 0 ? (
                      <div className="space-y-3">
                         {bookmarkedUsers.map(user => (
                             <Link to={`/user/${user.id}`} key={user.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">

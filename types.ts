@@ -31,6 +31,7 @@ export interface User {
   id: string;
   name: string;
   age: number;
+  mobile?: string;
   birthDate?: string; // ISO Date string YYYY-MM-DD
   gender: Gender;
   location: string;
@@ -52,6 +53,7 @@ export interface User {
   isPremium?: boolean;
   isGhostMode?: boolean;
   settings?: UserSettings;
+  isAdmin?: boolean;
 }
 
 export interface Message {

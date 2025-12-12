@@ -8,6 +8,15 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        // Proxy configuration for API calls (optional - can use direct URL instead)
+        proxy: {
+          '/api': {
+            target: 'https://localhost:7203',
+            changeOrigin: true,
+            secure: false, // Allow self-signed certificates
+            rewrite: (path) => path.replace(/^\/api/, '/api')
+          }
+        }
       },
       plugins: [react()],
       define: {

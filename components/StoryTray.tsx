@@ -33,7 +33,7 @@ const StoryTray: React.FC<StoryTrayProps> = ({ users, onViewStory, large = false
         <label className={`relative ${containerSizeClass} cursor-pointer`}>
             <div className={`w-full h-full rounded-full p-[2px] ${currentUser?.story ? 'bg-gradient-to-tr from-yellow-400 to-pink-600' : 'bg-transparent border-2 border-dashed border-gray-300'}`}>
                 <img 
-                    src={currentUser?.photo} 
+                    src={currentUser?.photo || currentUser?.photoUrl || 'https://via.placeholder.com/400'} 
                     alt="My Story" 
                     className="w-full h-full rounded-full object-cover border-2 border-white dark:border-black" 
                 />
@@ -56,7 +56,7 @@ const StoryTray: React.FC<StoryTrayProps> = ({ users, onViewStory, large = false
             <div key={user.id} className={`flex flex-col items-center space-y-1 flex-shrink-0 group cursor-pointer ${large ? 'min-w-[70px]' : 'min-w-[64px]'}`} onClick={() => hasStory ? onViewStory(user) : null}>
                 <Link to={!hasStory ? `/user/${user.id}` : '#'} className="block">
                     <div className={`${containerSizeClass} rounded-full p-[2px] transition-transform duration-200 group-hover:scale-105 ${hasStory ? 'bg-gradient-to-tr from-yellow-400 to-pink-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
-                        <img src={user.photo} alt={user.name} className="w-full h-full rounded-full object-cover border-2 border-white dark:border-black" />
+                        <img src={user.photo || user.photoUrl || 'https://via.placeholder.com/400'} alt={user.name} className="w-full h-full rounded-full object-cover border-2 border-white dark:border-black" />
                     </div>
                 </Link>
                 <span className={`${textSizeClass} text-gray-700 dark:text-gray-300 truncate w-full text-center group-hover:text-pink-500 font-medium`}>{user.name}</span>

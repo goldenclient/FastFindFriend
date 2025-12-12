@@ -18,6 +18,11 @@ import VisitorsListPage from './pages/VisitorsListPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import BottomNavBar from './components/BottomNavBar';
+import AdminPage from './pages/AdminPage';
+import AdminProductsPage from './pages/AdminProductsPage';
+import AdminCreateUserPage from './pages/AdminCreateUserPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminBroadcastPage from './pages/AdminBroadcastPage';
 
 const App: React.FC = () => {
   return (
@@ -59,6 +64,11 @@ const AppContent: React.FC = () => {
               <Route path="/blocked" element={<BlockedListPage />} />
               <Route path="/bookmarks" element={<BookmarksListPage />} />
               <Route path="/visitors" element={<VisitorsListPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/create-user" element={<AdminCreateUserPage />} />
+              <Route path="/admin/users" element={<AdminUsersPage />} />
+              <Route path="/admin/broadcast" element={<AdminBroadcastPage />} />
+              <Route path="/admin/products" element={<AdminProductsPage />} />
               <Route path="*" element={<Navigate to="/" />} />
             </>
           )}

@@ -44,7 +44,20 @@ const HomePage: React.FC = () => {
         // ... add other filters
 
         const data = await api.get<User[]>(`/users?${queryParams.toString()}`);
-        setUsers(data);
+        // Map photoUrl to photo for all users
+        const mappedUsers = data.map(user => {
+            if (user.photoUrl && !user.photo) {
+                user.photo = user.photoUrl;
+            }
+            if (user.storyUrl && !user.story) {
+                user.story = user.storyUrl;
+            }
+            if (user.galleryImages && (!user.gallery || user.gallery.length === 0)) {
+                user.gallery = user.galleryImages.map(img => img.imageUrl);
+            }
+            return user;
+        });
+        setUsers(mappedUsers);
     } catch (error) {
         console.error('Failed to fetch users', error);
     } finally {

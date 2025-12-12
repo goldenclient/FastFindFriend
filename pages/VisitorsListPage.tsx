@@ -2,24 +2,37 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { MOCK_USERS } from '../data/users';
 import { User } from '../types';
 import { useAuth } from '../context/AuthContext';
 import PremiumModal from '../components/PremiumModal';
+import { api } from '../services/api';
 
 const VisitorsListPage: React.FC = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const [showPremiumModal, setShowPremiumModal] = useState(false);
-
-    // Mocking a list of profile visitors.
-    const visitors: User[] = [MOCK_USERS[0], MOCK_USERS[1], MOCK_USERS[5]];
+    const [visitors, setVisitors] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (currentUser && !currentUser.isPremium) {
-            setShowPremiumModal(true);
-        }
+        const loadVisitors = async () => {
+            if (currentUser && !currentUser.isPremium) {
+                setShowPremiumModal(true);
+                setLoading(false);
+                return;
+            }
+            try {
+                const data = await api.get<User[]>('/interaction/visitors');
+                setVisitors(data);
+            } catch (error) {
+                console.error('Error loading visitors', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadVisitors();
     }, [currentUser]);
+
 
     const handleModalClose = () => {
         setShowPremiumModal(false);
@@ -33,7 +46,11 @@ const VisitorsListPage: React.FC = () => {
                 
                 {/* Blur Content if not premium */}
                 <div className={!currentUser?.isPremium ? 'filter blur-md pointer-events-none select-none' : ''}>
-                    {visitors.length > 0 ? (
+                    {loading ? (
+                        <div className="flex items-center justify-center h-full">
+                            <p className="text-gray-500">در حال بارگذاری...</p>
+                        </div>
+                    ) : visitors.length > 0 ? (
                         <div className="space-y-3">
                             {visitors.map(user => (
                                 <Link to={`/user/${user.id}`} key={user.id} className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg shadow hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">

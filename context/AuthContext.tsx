@@ -28,6 +28,7 @@ const parseJwt = (token: string) => {
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const ADMIN_MOBILE = '09122136866';
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,14 +47,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const user = await api.get<User>(`/users/${userId}`);
               
                // Map backend data to frontend
-              if (user.galleryImages && (!user.gallery || user.gallery.length === 0)) {
+              if (user.galleryImages && user.galleryImages.length > 0) {
+                // همیشه از galleryImages استفاده می‌کنیم
                 user.gallery = user.galleryImages.map(img => img.imageUrl);
+              } else {
+                user.gallery = [];
               }
               if (user.photoUrl && !user.photo) {
                   user.photo = user.photoUrl;
               }
               if (user.storyUrl && !user.story) {
                   user.story = user.storyUrl;
+              }
+
+              // Admin flag based on mobile number
+              if (user.mobile === ADMIN_MOBILE) {
+                  user.isAdmin = true;
               }
               
               setCurrentUser(user);
@@ -73,6 +82,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = (token: string, user: User) => {
     api.setToken(token);
+    if (user.mobile === ADMIN_MOBILE) {
+      user.isAdmin = true;
+    }
     setCurrentUser(user);
   };
 

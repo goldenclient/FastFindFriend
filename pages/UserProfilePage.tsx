@@ -24,16 +24,48 @@ const UserProfilePage: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewingStory, setViewingStory] = useState(false);
+  const [isAdminView, setIsAdminView] = useState(false);
 
   useEffect(() => {
+    // بررسی query parameter برای تشخیص ادمین
+    const urlParams = new URLSearchParams(window.location.search);
+    setIsAdminView(urlParams.get('admin') === 'true' && currentUser?.isAdmin === true);
+
     const fetchUser = async () => {
         try {
             const data = await api.get<User>(`/users/${userId}`);
+            
+            // Map backend data to frontend
+            if (data.photoUrl && !data.photo) {
+                data.photo = data.photoUrl;
+            }
+            if (data.storyUrl && !data.story) {
+                data.story = data.storyUrl;
+            }
+            if (data.galleryImages && (!data.gallery || data.gallery.length === 0)) {
+                data.gallery = data.galleryImages.map(img => img.imageUrl);
+            }
+            
             setUser(data);
             
-            // Note: Check interaction status (like, block) here if APIs exist
-            // const interaction = await api.get(`/interactions/status/${userId}`);
-            // setIsLiked(interaction.isLiked);
+            // ثبت بازدید پروفایل
+            if (userId && currentUser && userId !== currentUser.id) {
+                try {
+                    await api.post(`/interaction/view/${userId}`);
+                } catch (e) {
+                    console.error('Failed to record view', e);
+                }
+            }
+
+            // بررسی وضعیت bookmark
+            if (userId && currentUser) {
+                try {
+                    const bookmarks = await api.get<User[]>(`/interaction/bookmarks`);
+                    setIsBookmarked(bookmarks.some(b => b.id === userId));
+                } catch (e) {
+                    // اگر endpoint وجود نداشت، ignore می‌کنیم
+                }
+            }
         } catch (error) {
             console.error(error);
             navigate('/');
@@ -43,7 +75,7 @@ const UserProfilePage: React.FC = () => {
     };
 
     if (userId) fetchUser();
-  }, [userId, navigate]);
+  }, [userId, navigate, currentUser]);
 
   const handleScroll = () => {
       if (scrollRef.current) {
@@ -67,6 +99,15 @@ const UserProfilePage: React.FC = () => {
       } catch (e) {
           console.error('Like failed', e);
           setIsLiked(!isLiked); // Revert
+      }
+  };
+
+  const handleBookmark = async () => {
+      try {
+          const response = await api.post<{ isBookmarked: boolean }>(`/interaction/bookmark/${userId}`, {});
+          setIsBookmarked(response.isBookmarked);
+      } catch (e) {
+          console.error('Bookmark failed', e);
       }
   };
 
@@ -109,8 +150,12 @@ const UserProfilePage: React.FC = () => {
   );
 
   const headerRightAction = isScrolled ? (
-      <button onClick={() => setIsBookmarked(!isBookmarked)} className={`ml-2 ${isBookmarked ? 'text-pink-500' : 'text-gray-500'}`}>
+      <button onClick={handleBookmark} className={`ml-2 ${isBookmarked ? 'text-pink-500' : 'text-gray-500'}`}>
           <BookmarkIcon className="h-6 w-6" />
+      </button>
+  ) : isAdminView ? (
+      <button onClick={() => navigate(`/edit-profile?userId=${userId}&admin=true`)} className="text-gray-600 dark:text-gray-300 hover:text-pink-500">
+          <span className="text-sm font-bold">ویرایش</span>
       </button>
   ) : null;
 
@@ -155,7 +200,7 @@ const UserProfilePage: React.FC = () => {
                <button onClick={handleLike} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isLiked ? 'text-pink-500 bg-white' : 'text-white hover:bg-pink-500'}`} title="لایک">
                   <HeartIcon className="h-6 w-6" />
                </button>
-               <button onClick={() => setIsBookmarked(!isBookmarked)} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isBookmarked ? 'text-pink-500 bg-white' : 'text-white hover:text-pink-500'}`} title="نشان کردن">
+               <button onClick={handleBookmark} className={`bg-black/30 backdrop-blur-md p-2 rounded-full transition-colors ${isBookmarked ? 'text-pink-500 bg-white' : 'text-white hover:text-pink-500'}`} title="نشان کردن">
                   <BookmarkIcon className="h-6 w-6" />
                </button>
                <button onClick={handleReport} className="bg-black/30 backdrop-blur-md p-2 rounded-full text-white hover:text-red-500 transition-colors" title="گزارش خطا">
